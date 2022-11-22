@@ -27,6 +27,7 @@
 
 #include "ModbusRegister.h"
 #include "DigitalIoPin.h"
+#include "LiquidCrystal.h"
 
 // TODO: insert other definitions and declarations here
 
@@ -67,13 +68,35 @@ void task1(void *params)
 	DigitalIoPin sw_a4(0, 6, DigitalIoPin::pullup, true);
 	DigitalIoPin sw_a5(0, 7, DigitalIoPin::pullup, true);
 
+	DigitalIoPin *rs = new DigitalIoPin(0, 29, DigitalIoPin::output);
+	DigitalIoPin *en = new DigitalIoPin(0, 9, DigitalIoPin::output);
+	DigitalIoPin *d4 = new DigitalIoPin(0, 10, DigitalIoPin::output);
+	DigitalIoPin *d5 = new DigitalIoPin(0, 16, DigitalIoPin::output);
+	DigitalIoPin *d6 = new DigitalIoPin(1, 3, DigitalIoPin::output);
+	DigitalIoPin *d7 = new DigitalIoPin(0, 0, DigitalIoPin::output);
+	LiquidCrystal *lcd = new LiquidCrystal(rs, en, d4, d5, d6, d7);
+	// configure display geometry
+	lcd->begin(16, 2);
+	// set the cursor to column 0, line 1
+	// (note: line 1 is the second row, since counting begins with 0):
+	lcd->setCursor(0, 0);
+	// Print a message to the LCD.
+	lcd->print("MQTT_FreeRTOS");
+
+
 	while(true) {
-		float rh = 0;
+		float rh;
+		char buffer[32];
 
 		vTaskDelay(2000);
 
 		rh = RH.read()/10.0;
-		printf("RH=%.1f%%\n", rh);
+		snprintf(buffer, 32, "RH=%5.1f%%", rh);
+		printf("%s\n",buffer);
+		lcd->setCursor(0, 1);
+		// Print a message to the LCD.
+		lcd->print(buffer);
+
 	}
 }
 
