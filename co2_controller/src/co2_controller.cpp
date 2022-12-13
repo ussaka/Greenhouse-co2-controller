@@ -30,6 +30,8 @@
 #include "LiquidCrystal.h"
 
 #include "Config.h"
+#include "menu/Menu.h"
+#include "menu/NumericProperty.h"
 #include "Disablers.h"
 
 // TODO: insert other definitions and declarations here
@@ -47,6 +49,47 @@ void vConfigureTimerForRunTimeStats( void ) {
 }
 /* end runtime statictics collection */
 
+static void setupGPIOInterrupts(void) {
+	/* Initialise PININT driver */
+	Chip_PININT_Init(LPC_GPIO_PIN_INT);
+
+	#define SIGA 0, 5
+	#define SIGB 0, 6
+
+	#define BUTTON_SELECT
+
+	/* Set pins back to GPIO and configure as inputs*/
+	// SIGA
+	Chip_IOCON_PinMuxSet(LPC_IOCON, SIGA,
+			(IOCON_DIGMODE_EN | IOCON_MODE_PULLUP));
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO, SIGA);
+
+	// SIGB
+	Chip_IOCON_PinMuxSet(LPC_IOCON, SIGB,
+			(IOCON_DIGMODE_EN | IOCON_MODE_PULLUP));
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO, SIGB);
+
+	/* Enable PININT clock */
+	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_PININT);
+
+	/* Reset the PININT block */
+	Chip_SYSCTL_PeriphReset(RESET_PININT);
+
+	/* Configure interrupt channels for the GPIO pins in INMUX block */
+	Chip_INMUX_PinIntSel(0, SIGA); // SIGA
+
+	/* Configure channel interrupts as edge sensitive and falling edge interrupt */
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(0));
+	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(0));
+	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(0));
+
+	/* Enable interrupts in the NVIC */
+	NVIC_ClearPendingIRQ(PIN_INT0_IRQn);
+	NVIC_SetPriority(PIN_INT0_IRQn,
+	configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+	NVIC_EnableIRQ(PIN_INT0_IRQn);
+}
+
 static void idle_delay()
 {
 	vTaskDelay(1);
@@ -61,86 +104,89 @@ static void vSendMQTT(void *pvParameters) {
 
 
 static void vMeasure(void *pvParameters) {
+	ModbusMaster hmp(241); // Create modbus object that connects to slave id 241 (HMP60)
+	hmp.begin(9600); // all nodes must operate at the same speed!
+	hmp.idle(idle_delay); // idle function is called while waiting for reply from slave
+	ModbusRegister humidityData(&hmp, 256, true);
+	ModbusRegister temperatureData(&hmp, 257, true);
+
+	ModbusMaster co2(240);
+	co2.begin(9600);
+	ModbusRegister co2Data(&co2, 256, true);
+
+	ModbusRegister co2Status(&co2, 0x800, true);
+	ModbusRegister hmpStatus(&hmp, 0x200, true);
+
+	int co2Value = 0;
+	int rhValue = 0;
+	int tempValue = 0;
+
+	while (true)
+	{
+		vTaskDelay(5);
+
+		if (hmpStatus.read())
+		{
+			vTaskDelay(5);
+			tempValue = temperatureData.read() / 10;
+
+			vTaskDelay(5);
+			rhValue = humidityData.read() / 10;
+		}
+
+		vTaskDelay(5);
+		if (co2Status.read() == 0)
+		{
+			vTaskDelay(5);
+			co2Value = co2Data.read();
+		}
+	}
+}
+
+static void vLcdUI(void *pvParameters)
+{
 	(void) pvParameters;
 
 	retarget_init();
-
-	ModbusMaster node3(241); // Create modbus object that connects to slave id 241 (HMP60)
-	node3.begin(9600); // all nodes must operate at the same speed!
-	node3.idle(idle_delay); // idle function is called while waiting for reply from slave
-	ModbusRegister RH(&node3, 256, true);
-	ModbusRegister temp(&node3, 257, true);
-	float hum;
-	float t = 0;
-
-	while(true) {
-
-		char buffer[32];
-
-		vTaskDelay(2000);
-		DisableScheduler d;
-
-			hum = RH.read()/10.0;
-			t = temp.read()/10.0;
-			//snprintf(buffer, 32, "RH=%5.1f%%", rh);
-			//printf("%s\n",buffer);
-	}
-}
-
-static void vLcdUI(void *pvParameters) {
-	while(1) {
-		vTaskDelay(50);
-	}
-}
-
-void task1(void *params)
-{
-	(void) params;
-
-	retarget_init();
-
-	ModbusMaster node3(241); // Create modbus object that connects to slave id 241 (HMP60)
-	node3.begin(9600); // all nodes must operate at the same speed!
-	node3.idle(idle_delay); // idle function is called while waiting for reply from slave
-	ModbusRegister RH(&node3, 256, true);
-
-	DigitalIoPin relay(0, 27, DigitalIoPin::output); // CO2 relay
-	relay.write(0);
 
 	DigitalIoPin sw_a2(1, 8, DigitalIoPin::pullup, true);
 	DigitalIoPin sw_a3(0, 5, DigitalIoPin::pullup, true);
 	DigitalIoPin sw_a4(0, 6, DigitalIoPin::pullup, true);
 	DigitalIoPin sw_a5(0, 7, DigitalIoPin::pullup, true);
 
-	DigitalIoPin *rs = new DigitalIoPin(0, 29, DigitalIoPin::output);
-	DigitalIoPin *en = new DigitalIoPin(0, 9, DigitalIoPin::output);
-	DigitalIoPin *d4 = new DigitalIoPin(0, 10, DigitalIoPin::output);
-	DigitalIoPin *d5 = new DigitalIoPin(0, 16, DigitalIoPin::output);
-	DigitalIoPin *d6 = new DigitalIoPin(1, 3, DigitalIoPin::output);
-	DigitalIoPin *d7 = new DigitalIoPin(0, 0, DigitalIoPin::output);
-	LiquidCrystal *lcd = new LiquidCrystal(rs, en, d4, d5, d6, d7);
-	// configure display geometry
-	lcd->begin(16, 2);
-	// set the cursor to column 0, line 1
-	// (note: line 1 is the second row, since counting begins with 0):
-	lcd->setCursor(0, 0);
-	// Print a message to the LCD.
-	lcd->print("MQTT_FreeRTOS");
+	DigitalIoPin rs(0, 29, DigitalIoPin::output);
+	DigitalIoPin en(0, 9, DigitalIoPin::output);
+	DigitalIoPin d4(0, 10, DigitalIoPin::output);
+	DigitalIoPin d5(0, 16, DigitalIoPin::output);
+	DigitalIoPin d6(1, 3, DigitalIoPin::output);
+	DigitalIoPin d7(0, 0, DigitalIoPin::output);
 
+	LiquidCrystal lcd(&rs, &en, &d4, &d5, &d6, &d7);
+	lcd.begin(16, 2);
 
-	while(true) {
-		float rh;
-		char buffer[32];
+	int val;
 
-		vTaskDelay(2000);
+	Menu menu(lcd);
 
-		rh = RH.read()/10.0;
-		snprintf(buffer, 32, "RH=%5.1f%%", rh);
-		printf("%s\n",buffer);
-		lcd->setCursor(0, 1);
-		// Print a message to the LCD.
-		lcd->print(buffer);
+	while(true)
+	{
+//		if(xQueueReceive(interrupt_q, &val, 5000) == pdTRUE)
+//		{
+//			Menu::Event event = static_cast <Menu::Event> (val);
+//			menu.send(event);
+//		}
 
+		//float rh;
+		//char buffer[32];
+
+		//vTaskDelay(2000);
+
+		//rh = RH.read()/10.0;
+		//snprintf(buffer, 32, "RH=%5.1f%%", rh);
+		//printf("%s\n",buffer);
+		//lcd->setCursor(0, 1);
+		//// Print a message to the LCD.
+		//lcd->print(buffer);
 	}
 }
 
@@ -167,13 +213,9 @@ int main(void) {
 	// initialize RIT (= enable clocking etc.)
 	//Chip_RIT_Init(LPC_RITIMER);
 	// set the priority level of the interrupt
-	// The level must be equal or lower than the maximum priority specified in FreeRTOS config
-	// Note that in a Cortex-M3 a higher number indicates lower interrupt priority
-	//NVIC_SetPriority( RITIMER_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1 );
-
-	xTaskCreate(task1, "test",
-			configMINIMAL_STACK_SIZE * 4, NULL, (tskIDLE_PRIORITY + 1UL),
-			(TaskHandle_t *) NULL);
+//	xTaskCreate(task1, "test",
+//	configMINIMAL_STACK_SIZE * 4, NULL, (tskIDLE_PRIORITY + 1UL),
+//			(TaskHandle_t*) NULL);
 
 	xTaskCreate(vSendMQTT, "vSendMQTT",
 	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
