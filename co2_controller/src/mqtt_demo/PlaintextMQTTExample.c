@@ -255,7 +255,7 @@ static void prvMQTTSubscribeWithBackoffRetries( MQTTContext_t * pxMQTTContext );
  *
  * @param[in] pxMQTTContext MQTT context pointer.
  */
-static void prvMQTTPublishToTopic( MQTTContext_t * pxMQTTContext );
+static void prvMQTTPublishToTopic( MQTTContext_t * pxMQTTContext, char* msg );
 
 /**
  * @brief Unsubscribes from the previously subscribed topic as specified
@@ -396,95 +396,34 @@ static void prvMQTTDemoTask( void * pvParameters )
     MQTTStatus_t xMQTTStatus;
     PlaintextTransportStatus_t xNetworkStatus;
 
-    /* Remove compiler warnings about unused parameters. */
-    ( void ) pvParameters;
+	/* Remove compiler warnings about unused parameters. */
+	( void ) pvParameters;
 
-    /* Set the pParams member of the network context with desired transport. */
-    xNetworkContext.pParams = &xPlaintextTransportParams;
+	/* Set the pParams member of the network context with desired transport. */
+	xNetworkContext.pParams = &xPlaintextTransportParams;
 
-    ulGlobalEntryTimeMs = prvGetTimeMs();
+	ulGlobalEntryTimeMs = prvGetTimeMs();
 
     for( ; ; )
     {
-        /****************************** Connect. ******************************/
-
-        /* Attempt to connect to the MQTT broker. If connection fails, retry after
-         * a timeout. The timeout value will exponentially increase until the
-         * maximum number of attempts are reached or the maximum timeout value is
-         * reached. The function below returns a failure status if the TCP connection
-         * cannot be established to the broker after the configured number of attempts. */
         xNetworkStatus = prvConnectToServerWithBackoffRetries( &xNetworkContext );
-        configASSERT( xNetworkStatus == PLAINTEXT_TRANSPORT_SUCCESS );
-
-        /* Sends an MQTT Connect packet over the already connected TCP socket,
-         * and waits for a connection acknowledgment (CONNACK) packet. */
-        LogInfo( ( "Creating an MQTT connection to %s.", democonfigMQTT_BROKER_ENDPOINT ) );
         prvCreateMQTTConnectionWithBroker( &xMQTTContext, &xNetworkContext );
 
-        /**************************** Subscribe. ******************************/
+        co2 = 1;
+        rh = 2;
+        temp = 3;
+        valve = 4;
+        setPoint = 5;
 
-        /* If server rejected the subscription request, attempt to resubscribe to
-         * the topic. Attempts are made according to the exponential backoff retry
-         * strategy declared in backoff_algorithm.h. */
-        prvMQTTSubscribeWithBackoffRetries( &xMQTTContext );
+        char msg[256];
+        sprintf(msg, "field1=%d&field2=%d&field3=%d&field4=%dfield5=%d", co2, rh, temp, valve, setPoint);
 
-        /******************* Publish and Keep Alive Loop. *********************/
-        /* Publish messages with QoS0, then send and process Keep Alive messages. */
-        for( ulPublishCount = 0; ulPublishCount < ulMaxPublishCount; ulPublishCount++ )
-        {
-            LogInfo( ( "Publish to the MQTT topic %s.", mqttexampleTOPIC ) );
-            prvMQTTPublishToTopic( &xMQTTContext );
-vTaskDelay(mqttexamplePROCESS_LOOP_TIMEOUT_MS);
-            /* Process the incoming publish echo. Since the application subscribed
-             * to the same topic, the broker will send the same publish message
-             * back to the application. */
-            LogInfo( ( "Attempt to receive publish message from broker." ) );
-            xMQTTStatus = MQTT_ProcessLoop( &xMQTTContext,
-                                            mqttexamplePROCESS_LOOP_TIMEOUT_MS );
-            configASSERT( xMQTTStatus == MQTTSuccess );
+        prvMQTTPublishToTopic( &xMQTTContext , msg );
 
-            /* Leave the connection idle for some time. */
-            LogInfo( ( "Keeping Connection Idle...\r\n" ) );
-            vTaskDelay( mqttexampleDELAY_BETWEEN_PUBLISHES );
-        }
-
-        /******************** Unsubscribe from the topic. *********************/
-        LogInfo( ( "Unsubscribe from the MQTT topic %s.", mqttexampleTOPIC ) );
-        prvMQTTUnsubscribeFromTopic( &xMQTTContext );
-
-        /* Process the incoming packet from the broker. */
-        xMQTTStatus = MQTT_ProcessLoop( &xMQTTContext,
-                                        mqttexamplePROCESS_LOOP_TIMEOUT_MS );
-        configASSERT( xMQTTStatus == MQTTSuccess );
-
-        /**************************** Disconnect. *****************************/
-
-        /* Send an MQTT Disconnect packet over the connected TCP socket.
-         * There is no corresponding response for a disconnect packet. After
-         * sending the disconnect, the client must close the network connection. */
-        LogInfo( ( "Disconnecting the MQTT connection with %s.",
-                   democonfigMQTT_BROKER_ENDPOINT ) );
         xMQTTStatus = MQTT_Disconnect( &xMQTTContext );
-        configASSERT( xMQTTStatus == MQTTSuccess );
+		xNetworkStatus = Plaintext_FreeRTOS_Disconnect( &xNetworkContext );
 
-        /* Close the network connection. */
-        xNetworkStatus = Plaintext_FreeRTOS_Disconnect( &xNetworkContext );
-        configASSERT( xNetworkStatus == PLAINTEXT_TRANSPORT_SUCCESS );
-
-        /* Reset SUBACK status for each topic filter after completion of
-         * subscription request cycle. */
-        for( ulTopicCount = 0; ulTopicCount < mqttexampleTOPIC_COUNT; ulTopicCount++ )
-        {
-            xTopicFilterContext[ ulTopicCount ].xSubAckStatus = MQTTSubAckFailure;
-        }
-
-        /* Wait for some time between two iterations to ensure that we do not
-         * bombard the MQTT broker. */
-        LogInfo( ( "prvMQTTDemoTask() completed an iteration successfully. " ) );
-                 //  "Total free heap is %u.", xPortGetFreeHeapSize() ) );
-        LogInfo( ( "Demo completed successfully." ) );
-        LogInfo( ( "Short delay before starting the next iteration.... \r\n" ) );
-        vTaskDelay( mqttexampleDELAY_BETWEEN_DEMO_ITERATIONS );
+		vTaskDelay(1000);
     }
 }
 /*-----------------------------------------------------------*/
@@ -717,14 +656,11 @@ static void prvMQTTSubscribeWithBackoffRetries( MQTTContext_t * pxMQTTContext )
 }
 /*-----------------------------------------------------------*/
 
-static void prvMQTTPublishToTopic( MQTTContext_t * pxMQTTContext )
+static void prvMQTTPublishToTopic( MQTTContext_t * pxMQTTContext, char* msg )
 {
     MQTTStatus_t xResult;
     MQTTPublishInfo_t xMQTTPublishInfo;
-    char msg[40] = mqttexampleMESSAGE;
     int len = strlen(msg);
-    sprintf(&msg[len], " %d", (int)xTaskGetTickCount());
-    len = strlen(msg);
 
     /***
      * For readability, error handling in this function is restricted to the use of
