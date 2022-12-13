@@ -42,13 +42,13 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/src/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/src/portable/GCC/ARM_CM3}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/coreMQTT/source/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/coreMQTT/source/interface}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/backoffAlgorithm/source/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/networking}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/uart}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/modbus}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/coreMQTT/source/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/coreMQTT/source/interface}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/backoffAlgorithm/source/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/networking}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/uart}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/modbus}&quot;"/>
 								</option>
 								<option id="com.crt.advproject.cpp.misc.dialect.369208809" name="Language standard" superClass="com.crt.advproject.cpp.misc.dialect" useByScannerDiscovery="true" value="com.crt.advproject.misc.dialect.cpp11" valueType="enumerated"/>
 								<option id="com.crt.advproject.cpp.fpu.89641893" name="Floating point" superClass="com.crt.advproject.cpp.fpu" useByScannerDiscovery="true"/>
@@ -76,13 +76,13 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/src/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/src/portable/GCC/ARM_CM3}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/coreMQTT/source/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/coreMQTT/source/interface}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/backoffAlgorithm/source/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/networking}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/uart}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/modbus}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/coreMQTT/source/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/coreMQTT/source/interface}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/backoffAlgorithm/source/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/networking}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/uart}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/modbus}&quot;"/>
 								</option>
 								<option id="com.crt.advproject.c.misc.dialect.1515229651" name="Language standard" superClass="com.crt.advproject.c.misc.dialect" useByScannerDiscovery="true" value="com.crt.advproject.misc.dialect.c11" valueType="enumerated"/>
 								<inputType id="com.crt.advproject.compiler.input.509287823" superClass="com.crt.advproject.compiler.input"/>
@@ -99,9 +99,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/src/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/src/portable/GCC/ARM_CM3}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/networking}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/uart}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/modbus}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/networking}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/uart}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/co2_controller/src/modbus}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.340615519" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 								<inputType id="com.crt.advproject.assembler.input.234881764" name="Additional Assembly Source Files" superClass="com.crt.advproject.assembler.input"/>
