@@ -22,6 +22,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "heap_lock_monitor.h"
+#include "ModbusMaster.h"
+#include "ModbusRegister.h"
 
 // TODO: insert other definitions and declarations here
 /*****************************************************************************
@@ -52,6 +54,45 @@ static void vSendMQTT(void *pvParameters) {
 }
 
 static void vMeasure(void *pvParameters) {
+	//ModbusMaster fan(1);
+	//fan.begin(9600);
+
+	ModbusMaster m();
+
+	//ModbusMaster co2(240);
+	//co2.begin(9600);
+
+	//ModbusMaster hmp(241);
+	//hmp.begin(9600);
+
+//	ModbusRegister co2Data(&co2, 0x100, true);
+
+	//	Relative humidity
+	//ModbusRegister humidityData(&hmp, 0x100, true);
+	//ModbusRegister temperatureData(&hmp, 0x101, true);
+
+
+	int co2Value = 0;
+	int rhValue = 0;
+	int tempValue = 0;
+
+	//Sleep(5);
+
+	//if(hmpStatus.read())
+	{
+	//	Sleep(5);
+		//tempValue = temperatureData.read() / 10;
+
+	//	Sleep(5);
+		//rhValue = humidityData.read() / 10;
+	}
+
+	//Sleep(5);
+	//if(co2Status.read() == 0)
+	{
+		//Sleep(5);
+		//co2Value = co2Data.read();
+	}
 	while(1) {
 
 	}

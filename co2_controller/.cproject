@@ -39,6 +39,13 @@
 								<option id="com.crt.advproject.cpp.fpu.1005753764" name="Floating point" superClass="com.crt.advproject.cpp.fpu" useByScannerDiscovery="true"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1839423074" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_board_nxp_lpcxpresso_1549/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/networking}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/backoffAlgorithm/source/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/coreMQTT/source/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/modbus}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/uart}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp_socket/src/coreMQTT/source/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_15xx/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FreeRTOS/src/include}&quot;"/>
@@ -312,5 +319,12 @@
 		<boardId>LPCXpresso1549</boardId>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/co2_controller"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/co2_controller"/>
+		</configuration>
+	</storageModule>
 </cproject>
