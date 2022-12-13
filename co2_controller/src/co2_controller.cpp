@@ -29,6 +29,9 @@
 #include "DigitalIoPin.h"
 #include "LiquidCrystal.h"
 
+#include "Config.h"
+#include "Disablers.h"
+
 // TODO: insert other definitions and declarations here
 
 /* The following is required if runtime statistics are to be collected
@@ -47,6 +50,47 @@ void vConfigureTimerForRunTimeStats( void ) {
 static void idle_delay()
 {
 	vTaskDelay(1);
+}
+
+// SW1 listener thread
+static void vSendMQTT(void *pvParameters) {
+	while (1) {
+		vTaskDelay(50);
+	}
+}
+
+
+static void vMeasure(void *pvParameters) {
+	(void) pvParameters;
+
+	retarget_init();
+
+	ModbusMaster node3(241); // Create modbus object that connects to slave id 241 (HMP60)
+	node3.begin(9600); // all nodes must operate at the same speed!
+	node3.idle(idle_delay); // idle function is called while waiting for reply from slave
+	ModbusRegister RH(&node3, 256, true);
+	ModbusRegister temp(&node3, 257, true);
+	float hum;
+	float t = 0;
+
+	while(true) {
+
+		char buffer[32];
+
+		vTaskDelay(2000);
+		DisableScheduler d;
+
+			hum = RH.read()/10.0;
+			t = temp.read()/10.0;
+			//snprintf(buffer, 32, "RH=%5.1f%%", rh);
+			//printf("%s\n",buffer);
+	}
+}
+
+static void vLcdUI(void *pvParameters) {
+	while(1) {
+		vTaskDelay(50);
+	}
 }
 
 void task1(void *params)
@@ -130,6 +174,18 @@ int main(void) {
 	xTaskCreate(task1, "test",
 			configMINIMAL_STACK_SIZE * 4, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t *) NULL);
+
+	xTaskCreate(vSendMQTT, "vSendMQTT",
+	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
+
+	xTaskCreate(vMeasure, "vMeasure",
+	configMINIMAL_STACK_SIZE * 4, NULL, (tskIDLE_PRIORITY + 3UL),
+			(TaskHandle_t*) NULL);
+
+	xTaskCreate(vLcdUI, "vLcdUI",
+	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
 
 	vStartSimpleMQTTDemo();
 	/* Start the scheduler */
