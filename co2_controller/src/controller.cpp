@@ -45,6 +45,24 @@ static void prvSetupHardware(void) {
 	Board_LED_Set(0, false);
 }
 
+// SW1 listener thread
+static void vSendMQTT(void *pvParameters) {
+	while (1) {
+	}
+}
+
+static void vMeasure(void *pvParameters) {
+	while(1) {
+
+	}
+}
+
+static void vLcdUI(void *pvParameters) {
+	while(1) {
+
+	}
+}
+
 /*****************************************************************************
  * Public functions
  ****************************************************************************/
@@ -69,6 +87,18 @@ int main(void) {
 	prvSetupHardware();
 
 	heap_monitor_setup();
+
+	xTaskCreate(vSendMQTT, "vSendMQTT",
+	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
+
+	xTaskCreate(vMeasure, "vMeasure",
+	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
+
+	xTaskCreate(vLcdUI, "vLcdUI",
+	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
 
 	/* Start the scheduler */
 	vTaskStartScheduler();
