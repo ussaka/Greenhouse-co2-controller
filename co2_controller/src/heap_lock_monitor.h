@@ -24,9 +24,9 @@ void heap_monitor_setup(void);
 
 void heap_monitor_update(void);
 
-void __malloc_lock(struct _reent *reent);
+void __malloc_lock (struct _reent *reent);
 
-void __malloc_unlock(struct _reent *reent);
+void __malloc_unlock (struct _reent *reent);
 
 #ifdef __cplusplus
 }

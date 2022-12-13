@@ -28,7 +28,7 @@
 //
 //*****************************************************************************
 extern "C" {
-extern void __libc_init_array(void);
+    extern void __libc_init_array(void);
 }
 #endif
 #endif
@@ -212,126 +212,126 @@ WEAK extern void __valid_user_code_checksum();
 // This relies on the linker script to place at correct location in memory.
 //
 //*****************************************************************************
-extern void (*const g_pfnVectors[])(void);
-__attribute__ ((used,section(".isr_vector"))) void (*const g_pfnVectors[])(
-		void) = {
-			// Core Level - CM3
-			&_vStackTop,// The initial stack pointer
-			ResetISR,// The reset handler
-			NMI_Handler,// The NMI handler
-			HardFault_Handler,// The hard fault handler
-			MemManage_Handler,// The MPU fault handler
-			BusFault_Handler,// The bus fault handler
-			UsageFault_Handler,// The usage fault handler
-			__valid_user_code_checksum,// LPC MCU Checksum
-			0,// Reserved
-			0,// Reserved
-			0,// Reserved
-			SVC_Handler,// SVCall handler
-			DebugMon_Handler,// Debug monitor handler
-			0,// Reserved
-			PendSV_Handler,// The PendSV handler
-			SysTick_Handler,// The SysTick handler
+extern void (* const g_pfnVectors[])(void);
+__attribute__ ((used,section(".isr_vector")))
+void (* const g_pfnVectors[])(void) = {
+	// Core Level - CM3
+	&_vStackTop,                       // The initial stack pointer
+	ResetISR,                          // The reset handler
+	NMI_Handler,                       // The NMI handler
+	HardFault_Handler,                 // The hard fault handler
+	MemManage_Handler,                 // The MPU fault handler
+	BusFault_Handler,                  // The bus fault handler
+	UsageFault_Handler,                // The usage fault handler
+    __valid_user_code_checksum,        // LPC MCU Checksum
+	0,                                 // Reserved
+	0,                                 // Reserved
+	0,                                 // Reserved
+	SVC_Handler,                       // SVCall handler
+	DebugMon_Handler,                  // Debug monitor handler
+	0,                                 // Reserved
+	PendSV_Handler,                    // The PendSV handler
+	SysTick_Handler,                   // The SysTick handler
 
-			// Chip Level - LPC15xx
+    // Chip Level - LPC15xx
 #if defined (USE_LPCOPEN_IRQHANDLER_NAMES)
-		WDT_IRQHandler,                    //  0 - Windowed watchdog timer
-		BOD_IRQHandler,//  1 - BOD
-		FMC_IRQHandler,//  2 - Flash controller
-		EEPROM_IRQHandler,//  3 - EEPROM controller
-		DMA_IRQHandler,//  4 - DMA
-		GINT0_IRQHandler,//  5 - GINT0
-		GINT1_IRQHandler,//  6 - GINT1
-		PIN_INT0_IRQHandler,//  7 - PIO INT0
-		PIN_INT1_IRQHandler,//  8 - PIO INT1
-		PIN_INT2_IRQHandler,//  9 - PIO INT2
-		PIN_INT3_IRQHandler,// 10 - PIO INT3
-		PIN_INT4_IRQHandler,// 11 - PIO INT4
-		PIN_INT5_IRQHandler,// 12 - PIO INT5
-		PIN_INT6_IRQHandler,// 13 - PIO INT6
-		PIN_INT7_IRQHandler,// 14 - PIO INT7
-		RIT_IRQHandler,// 15 - RIT
-		SCT0_IRQHandler,// 16 - State configurable timer
-		SCT1_IRQHandler,// 17 - State configurable timer
-		SCT2_IRQHandler,// 18 - State configurable timer
-		SCT3_IRQHandler,// 19 - State configurable timer
-		MRT_IRQHandler,// 20 - Multi-Rate Timer
-		UART0_IRQHandler,// 21 - UART0
-		UART1_IRQHandler,// 22 - UART1
-		UART2_IRQHandler,// 23 - UART2
-		I2C0_IRQHandler,// 24 - I2C0 controller
-		SPI0_IRQHandler,// 25 - SPI0 controller
-		SPI1_IRQHandler,// 26 - SPI1 controller
-		CAN_IRQHandler,// 27 - C_CAN0
-		USB_IRQHandler,// 28 - USB IRQ
-		USB_FIQHandler,// 29 - USB FIQ
-		USBWakeup_IRQHandler,// 30 - USB wake-up
-		ADC0A_IRQHandler,// 31 - ADC0 sequence A completion
-		ADC0B_IRQHandler,// 32 - ADC0 sequence B completion
-		ADC0_THCMP_IRQHandler,// 33 - ADC0 threshold compare
-		ADC0_OVR_IRQHandler,// 34 - ADC0 overrun
-		ADC1A_IRQHandler,// 35 - ADC1 sequence A completion
-		ADC1B_IRQHandler,// 36 - ADC1 sequence B completion
-		ADC1_THCMP_IRQHandler,// 37 - ADC1 threshold compare
-		ADC1_OVR_IRQHandler,// 38 - ADC1 overrun
-		DAC_IRQHandler,// 39 - DAC
-		ACMP0_IRQHandler,// 40 - Analog Comparator 0
-		ACMP1_IRQHandler,// 41 - Analog Comparator 1
-		ACMP2_IRQHandler,// 42 - Analog Comparator 2
-		ACMP3_IRQHandler,// 43 - Analog Comparator 3
-		QEI_IRQHandler,// 44 - QEI
-		RTC_ALARM_IRQHandler,// 45 - RTC alarm
-		RTC_WAKE_IRQHandler,// 46 - RTC wake-up
+    WDT_IRQHandler,                    //  0 - Windowed watchdog timer
+    BOD_IRQHandler,                    //  1 - BOD
+    FMC_IRQHandler,                    //  2 - Flash controller
+    EEPROM_IRQHandler,                 //  3 - EEPROM controller
+    DMA_IRQHandler,                    //  4 - DMA
+    GINT0_IRQHandler,                  //  5 - GINT0
+    GINT1_IRQHandler,                  //  6 - GINT1
+    PIN_INT0_IRQHandler,               //  7 - PIO INT0
+    PIN_INT1_IRQHandler,               //  8 - PIO INT1
+    PIN_INT2_IRQHandler,               //  9 - PIO INT2
+    PIN_INT3_IRQHandler,               // 10 - PIO INT3
+    PIN_INT4_IRQHandler,               // 11 - PIO INT4
+    PIN_INT5_IRQHandler,               // 12 - PIO INT5
+    PIN_INT6_IRQHandler,               // 13 - PIO INT6
+    PIN_INT7_IRQHandler,               // 14 - PIO INT7
+    RIT_IRQHandler,                    // 15 - RIT
+    SCT0_IRQHandler,                   // 16 - State configurable timer
+    SCT1_IRQHandler,                   // 17 - State configurable timer
+    SCT2_IRQHandler,                   // 18 - State configurable timer
+    SCT3_IRQHandler,                   // 19 - State configurable timer
+    MRT_IRQHandler,                    // 20 - Multi-Rate Timer
+    UART0_IRQHandler,                  // 21 - UART0
+    UART1_IRQHandler,                  // 22 - UART1
+    UART2_IRQHandler,                  // 23 - UART2
+    I2C0_IRQHandler,                   // 24 - I2C0 controller
+    SPI0_IRQHandler,                   // 25 - SPI0 controller
+    SPI1_IRQHandler,                   // 26 - SPI1 controller
+    CAN_IRQHandler,                    // 27 - C_CAN0
+    USB_IRQHandler,                    // 28 - USB IRQ
+    USB_FIQHandler,                    // 29 - USB FIQ
+    USBWakeup_IRQHandler,              // 30 - USB wake-up
+    ADC0A_IRQHandler,                  // 31 - ADC0 sequence A completion
+    ADC0B_IRQHandler,                  // 32 - ADC0 sequence B completion
+    ADC0_THCMP_IRQHandler,             // 33 - ADC0 threshold compare
+    ADC0_OVR_IRQHandler,               // 34 - ADC0 overrun
+    ADC1A_IRQHandler,                  // 35 - ADC1 sequence A completion
+    ADC1B_IRQHandler,                  // 36 - ADC1 sequence B completion
+    ADC1_THCMP_IRQHandler,             // 37 - ADC1 threshold compare
+    ADC1_OVR_IRQHandler,               // 38 - ADC1 overrun
+    DAC_IRQHandler,                    // 39 - DAC
+    ACMP0_IRQHandler,                  // 40 - Analog Comparator 0
+    ACMP1_IRQHandler,                  // 41 - Analog Comparator 1
+    ACMP2_IRQHandler,                  // 42 - Analog Comparator 2
+    ACMP3_IRQHandler,                  // 43 - Analog Comparator 3
+    QEI_IRQHandler,                    // 44 - QEI
+    RTC_ALARM_IRQHandler,              // 45 - RTC alarm
+    RTC_WAKE_IRQHandler,               // 46 - RTC wake-up
 #else
-		WDT_IRQHandler,                    //  0 - Windowed watchdog timer
-		BOD_IRQHandler,//  1 - BOD
-		FLASH_IRQHandler,//  2 - Flash controller
-		EEPROM_IRQHandler,//  3 - EEPROM controller
-		DMA_IRQHandler,//  4 - DMA
-		GINT0_IRQHandler,//  5 - GINT0
-		GINT1_IRQHandler,//  6 - GINT1
-		PININT0_IRQHandler,//  7 - PIO INT0
-		PININT1_IRQHandler,//  8 - PIO INT1
-		PININT2_IRQHandler,//  9 - PIO INT2
-		PININT3_IRQHandler,// 10 - PIO INT3
-		PININT4_IRQHandler,// 11 - PIO INT4
-		PININT5_IRQHandler,// 12 - PIO INT5
-		PININT6_IRQHandler,// 13 - PIO INT6
-		PININT7_IRQHandler,// 14 - PIO INT7
-		RIT_IRQHandler,// 15 - RIT
-		SCT0_IRQHandler,// 16 - State configurable timer
-		SCT1_IRQHandler,// 17 - State configurable timer
-		SCT2_IRQHandler,// 18 - State configurable timer
-		SCT3_IRQHandler,// 19 - State configurable timer
-		MRT_IRQHandler,// 20 - Multi-Rate Timer
-		UART0_IRQHandler,// 21 - UART0
-		UART1_IRQHandler,// 22 - UART1
-		UART2_IRQHandler,// 23 - UART2
-		I2C0_IRQHandler,// 24 - I2C0 controller
-		SPI0_IRQHandler,// 25 - SPI0 controller
-		SPI1_IRQHandler,// 26 - SPI1 controller
-		CAN0_IRQHandler,// 27 - C_CAN0
-		USB_IRQHandler,// 28 - USB IRQ
-		USB_FIQHandler,// 29 - USB FIQ
-		USBWakeup_IRQHandler,// 30 - USB wake-up
-		ADC0_SEQA_IRQHandler,// 31 - ADC0 sequence A completion
-		ADC0_SEQB_IRQHandler,// 32 - ADC0 sequence B completion
-		ADC0_THCMP_IRQHandler,// 33 - ADC0 threshold compare
-		ADC0_OVR_IRQHandler,// 34 - ADC0 overrun
-		ADC1_SEQA_IRQHandler,// 35 - ADC1 sequence A completion
-		ADC1_SEQB_IRQHandler,// 36 - ADC1 sequence B completion
-		ADC1_THCMP_IRQHandler,// 37 - ADC1 threshold compare
-		ADC1_OVR_IRQHandler,// 38 - ADC1 overrun
-		DAC_IRQHandler,// 39 - DAC
-		CMP0_IRQHandler,// 40 - Analog Comparator 0
-		CMP1_IRQHandler,// 41 - Analog Comparator 1
-		CMP2_IRQHandler,// 42 - Analog Comparator 2
-		CMP3_IRQHandler,// 43 - Analog Comparator 3
-		QEI_IRQHandler,// 44 - QEI
-		RTC_ALARM_IRQHandler,// 45 - RTC alarm
-		RTC_WAKE_IRQHandler,// 46 - RTC wake-up
+    WDT_IRQHandler,                    //  0 - Windowed watchdog timer
+    BOD_IRQHandler,                    //  1 - BOD
+    FLASH_IRQHandler,                  //  2 - Flash controller
+    EEPROM_IRQHandler,                 //  3 - EEPROM controller
+    DMA_IRQHandler,                    //  4 - DMA
+    GINT0_IRQHandler,                  //  5 - GINT0
+    GINT1_IRQHandler,                  //  6 - GINT1
+    PININT0_IRQHandler,                //  7 - PIO INT0
+    PININT1_IRQHandler,                //  8 - PIO INT1
+    PININT2_IRQHandler,                //  9 - PIO INT2
+    PININT3_IRQHandler,                // 10 - PIO INT3
+    PININT4_IRQHandler,                // 11 - PIO INT4
+    PININT5_IRQHandler,                // 12 - PIO INT5
+    PININT6_IRQHandler,                // 13 - PIO INT6
+    PININT7_IRQHandler,                // 14 - PIO INT7
+    RIT_IRQHandler,                    // 15 - RIT
+    SCT0_IRQHandler,                   // 16 - State configurable timer
+    SCT1_IRQHandler,                   // 17 - State configurable timer
+    SCT2_IRQHandler,                   // 18 - State configurable timer
+    SCT3_IRQHandler,                   // 19 - State configurable timer
+    MRT_IRQHandler,                    // 20 - Multi-Rate Timer
+    UART0_IRQHandler,                  // 21 - UART0
+    UART1_IRQHandler,                  // 22 - UART1
+    UART2_IRQHandler,                  // 23 - UART2
+    I2C0_IRQHandler,                   // 24 - I2C0 controller
+    SPI0_IRQHandler,                   // 25 - SPI0 controller
+    SPI1_IRQHandler,                   // 26 - SPI1 controller
+    CAN0_IRQHandler,                   // 27 - C_CAN0
+    USB_IRQHandler,                    // 28 - USB IRQ
+    USB_FIQHandler,                    // 29 - USB FIQ
+    USBWakeup_IRQHandler,              // 30 - USB wake-up
+    ADC0_SEQA_IRQHandler,              // 31 - ADC0 sequence A completion
+    ADC0_SEQB_IRQHandler,              // 32 - ADC0 sequence B completion
+    ADC0_THCMP_IRQHandler,             // 33 - ADC0 threshold compare
+    ADC0_OVR_IRQHandler,               // 34 - ADC0 overrun
+    ADC1_SEQA_IRQHandler,              // 35 - ADC1 sequence A completion
+    ADC1_SEQB_IRQHandler,              // 36 - ADC1 sequence B completion
+    ADC1_THCMP_IRQHandler,             // 37 - ADC1 threshold compare
+    ADC1_OVR_IRQHandler,               // 38 - ADC1 overrun
+    DAC_IRQHandler,                    // 39 - DAC
+    CMP0_IRQHandler,                   // 40 - Analog Comparator 0
+    CMP1_IRQHandler,                   // 41 - Analog Comparator 1
+    CMP2_IRQHandler,                   // 42 - Analog Comparator 2
+    CMP3_IRQHandler,                   // 43 - Analog Comparator 3
+    QEI_IRQHandler,                    // 44 - QEI
+    RTC_ALARM_IRQHandler,              // 45 - RTC alarm
+    RTC_WAKE_IRQHandler,               // 46 - RTC wake-up
 #endif
-	}; /* End of g_pfnVectors */
+}; /* End of g_pfnVectors */
 
 //*****************************************************************************
 // Functions to carry out the initialization of RW and BSS data sections. These
@@ -341,19 +341,19 @@ __attribute__ ((used,section(".isr_vector"))) void (*const g_pfnVectors[])(
 //*****************************************************************************
 __attribute__ ((section(".after_vectors")))
 void data_init(unsigned int romstart, unsigned int start, unsigned int len) {
-	unsigned int *pulDest = (unsigned int*) start;
-	unsigned int *pulSrc = (unsigned int*) romstart;
-	unsigned int loop;
-	for (loop = 0; loop < len; loop = loop + 4)
-		*pulDest++ = *pulSrc++;
+    unsigned int *pulDest = (unsigned int*) start;
+    unsigned int *pulSrc = (unsigned int*) romstart;
+    unsigned int loop;
+    for (loop = 0; loop < len; loop = loop + 4)
+        *pulDest++ = *pulSrc++;
 }
 
 __attribute__ ((section(".after_vectors")))
 void bss_init(unsigned int start, unsigned int len) {
-	unsigned int *pulDest = (unsigned int*) start;
-	unsigned int loop;
-	for (loop = 0; loop < len; loop = loop + 4)
-		*pulDest++ = 0;
+    unsigned int *pulDest = (unsigned int*) start;
+    unsigned int loop;
+    for (loop = 0; loop < len; loop = loop + 4)
+        *pulDest++ = 0;
 }
 
 //*****************************************************************************
@@ -368,71 +368,73 @@ extern unsigned int __data_section_table_end;
 extern unsigned int __bss_section_table;
 extern unsigned int __bss_section_table_end;
 
+
 //*****************************************************************************
 // Reset entry point for your code.
 // Sets up a simple runtime environment and initializes the C/C++
 // library.
 //*****************************************************************************
 __attribute__ ((section(".after_vectors")))
-void ResetISR(void) {
+void
+ResetISR(void) {
 
-	//
-	// Copy the data sections from flash to SRAM.
-	//
-	unsigned int LoadAddr, ExeAddr, SectionLen;
-	unsigned int *SectionTableAddr;
+    //
+    // Copy the data sections from flash to SRAM.
+    //
+    unsigned int LoadAddr, ExeAddr, SectionLen;
+    unsigned int *SectionTableAddr;
 
-	// Load base address of Global Section Table
-	SectionTableAddr = &__data_section_table;
+    // Load base address of Global Section Table
+    SectionTableAddr = &__data_section_table;
 
-	// Copy the data sections from flash to SRAM.
-	while (SectionTableAddr < &__data_section_table_end) {
-		LoadAddr = *SectionTableAddr++;
-		ExeAddr = *SectionTableAddr++;
-		SectionLen = *SectionTableAddr++;
-		data_init(LoadAddr, ExeAddr, SectionLen);
-	}
-	// At this point, SectionTableAddr = &__bss_section_table;
-	// Zero fill the bss segment
-	while (SectionTableAddr < &__bss_section_table_end) {
-		ExeAddr = *SectionTableAddr++;
-		SectionLen = *SectionTableAddr++;
-		bss_init(ExeAddr, SectionLen);
-	}
-
-	// Optionally enable Cortex-M3 SWV trace (off by default at reset)
-	// Note - your board support must also set up the switch matrix
-	// so that SWO is output on the appropriate pin for your hardware
+    // Copy the data sections from flash to SRAM.
+    while (SectionTableAddr < &__data_section_table_end) {
+        LoadAddr = *SectionTableAddr++;
+        ExeAddr = *SectionTableAddr++;
+        SectionLen = *SectionTableAddr++;
+        data_init(LoadAddr, ExeAddr, SectionLen);
+    }
+    // At this point, SectionTableAddr = &__bss_section_table;
+    // Zero fill the bss segment
+    while (SectionTableAddr < &__bss_section_table_end) {
+        ExeAddr = *SectionTableAddr++;
+        SectionLen = *SectionTableAddr++;
+        bss_init(ExeAddr, SectionLen);
+    }
+    
+    // Optionally enable Cortex-M3 SWV trace (off by default at reset)
+    // Note - your board support must also set up the switch matrix 
+    // so that SWO is output on the appropriate pin for your hardware
 #if !defined (DONT_ENABLE_SWVTRACECLK)
 	// Write 0x00000001 to TRACECLKDIV – Trace divider
-	volatile unsigned int *TRACECLKDIV = (unsigned int*) 0x400740D8;
+	volatile unsigned int *TRACECLKDIV = (unsigned int *) 0x400740D8;
 	*TRACECLKDIV = 1;
 #endif
 
 #if defined (__USE_CMSIS) || defined (__USE_LPCOPEN)
-	SystemInit();
+    SystemInit();
 #endif
 
 #if defined (__cplusplus)
-	//
-	// Call C++ library initialisation
-	//
-	__libc_init_array();
+    //
+    // Call C++ library initialisation
+    //
+    __libc_init_array();
 #endif
 
 #if defined (__REDLIB__)
     // Call the Redlib library, which in turn calls main()
     __main() ;
 #else
-	main();
+    main();
 #endif
 
-	//
-	// main() shouldn't return, but if it does, we'll just enter an infinite loop
-	//
-	while (1) {
-		;
-	}
+    //
+    // main() shouldn't return, but if it does, we'll just enter an infinite loop
+    //
+    while (1) {
+        ;
+    }
 }
 
 //*****************************************************************************
@@ -440,57 +442,48 @@ void ResetISR(void) {
 // handler routines in your application code.
 //*****************************************************************************
 __attribute__ ((section(".after_vectors")))
-void NMI_Handler(void) {
-	while (1) {
-	}
+void NMI_Handler(void)
+{ while(1) {}
 }
 
 __attribute__ ((section(".after_vectors")))
-void HardFault_Handler(void) {
-	while (1) {
-	}
+void HardFault_Handler(void)
+{ while(1) {}
 }
 
 __attribute__ ((section(".after_vectors")))
-void MemManage_Handler(void) {
-	while (1) {
-	}
+void MemManage_Handler(void)
+{ while(1) {}
 }
 
 __attribute__ ((section(".after_vectors")))
-void BusFault_Handler(void) {
-	while (1) {
-	}
+void BusFault_Handler(void)
+{ while(1) {}
 }
 
 __attribute__ ((section(".after_vectors")))
-void UsageFault_Handler(void) {
-	while (1) {
-	}
+void UsageFault_Handler(void)
+{ while(1) {}
 }
 
 __attribute__ ((section(".after_vectors")))
-void SVC_Handler(void) {
-	while (1) {
-	}
+void SVC_Handler(void)
+{ while(1) {}
 }
 
 __attribute__ ((section(".after_vectors")))
-void DebugMon_Handler(void) {
-	while (1) {
-	}
+void DebugMon_Handler(void)
+{ while(1) {}
 }
 
 __attribute__ ((section(".after_vectors")))
-void PendSV_Handler(void) {
-	while (1) {
-	}
+void PendSV_Handler(void)
+{ while(1) {}
 }
 
 __attribute__ ((section(".after_vectors")))
-void SysTick_Handler(void) {
-	while (1) {
-	}
+void SysTick_Handler(void)
+{ while(1) {}
 }
 
 //*****************************************************************************
@@ -500,8 +493,9 @@ void SysTick_Handler(void) {
 //
 //*****************************************************************************
 __attribute__ ((section(".after_vectors")))
-void IntDefaultHandler(void) {
-	while (1) {
-	}
+void IntDefaultHandler(void)
+{ while(1) {}
 }
+
+
 

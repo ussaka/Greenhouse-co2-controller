@@ -35,24 +35,30 @@
 
 #include <stdlib.h>
 
-void* operator new(size_t size) {
-	return malloc(size);
+void *operator new(size_t size)
+{
+    return malloc(size);
 }
 
-void* operator new[](size_t size) {
-	return malloc(size);
+void *operator new[](size_t size)
+{
+    return malloc(size);
 }
 
-void operator delete(void *p) {
-	free(p);
+void operator delete(void *p)
+{
+    free(p);
 }
 
-void operator delete[](void *p) {
-	free(p);
+void operator delete[](void *p)
+{
+    free(p);
 }
 
-extern "C" int __aeabi_atexit(void *object, void (*destructor)(void*),
-		void *dso_handle) {
+extern "C" int __aeabi_atexit(void *object,
+		void (*destructor)(void *),
+		void *dso_handle)
+{
 	return 0;
 }
 
@@ -77,9 +83,9 @@ extern "C" void free(void *) {
  * code size noticeably. Note that this function should not return.
  ******************************************************************/
 namespace __gnu_cxx {
-void __verbose_terminate_handler() {
-	while (1)
-		;
+void __verbose_terminate_handler()
+{
+  while(1);
 }
 }
 #endif

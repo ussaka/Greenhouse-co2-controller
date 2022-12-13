@@ -28,32 +28,38 @@ float heapPercentageUsed_;
 
 extern const uint8_t FreeRTOSDebugConfig[];
 
-void heap_monitor_setup(void) {
+void heap_monitor_setup(void)
+{
 	/* fool the linker to keep data that task aware debugger needs */
 	heapTotalSize_ = FreeRTOSDebugConfig[0];
 
 	/* calculate actual heap size */
-	if (&_pvHeapLimit) {
-		heapTotalSize_ = (int) (&_pvHeapLimit) - (int) (&_pvHeapStart);
-	} else {
-		heapTotalSize_ = (int) (&__top_RAM) - (int) (&_pvHeapStart)
-				- DEFAULT_STACK_SIZE_;
+	if(&_pvHeapLimit) {
+		heapTotalSize_ = (int)(&_pvHeapLimit) - (int)(&_pvHeapStart);
+	}
+	else {
+		heapTotalSize_ = (int)(&__top_RAM) - (int)(&_pvHeapStart) - DEFAULT_STACK_SIZE_;
 	}
 }
 
-void heap_monitor_update(void) {
-	heapAmountUsed_ = (int) __end_of_heap - (int) (&_pvHeapStart);
+void heap_monitor_update(void)
+{
+	heapAmountUsed_ = (int)__end_of_heap - (int)(&_pvHeapStart);
 	heapPercentageUsed_ = heapAmountUsed_ * 100.0 / heapTotalSize_;
 }
 
-void __malloc_lock(struct _reent *reent) {
+
+void __malloc_lock (struct _reent *reent)
+{
 	(void) reent;
 	vTaskSuspendAll();
 }
 
-void __malloc_unlock(struct _reent *reent) {
+void __malloc_unlock (struct _reent *reent)
+{
 	(void) reent;
 	heap_monitor_update();
 	xTaskResumeAll();
 }
+
 

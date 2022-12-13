@@ -22,9 +22,32 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "heap_lock_monitor.h"
-#include "external/modbus/ModbusMaster.h"
 #include "external/modbus/ModbusRegister.h"
 #include "retarget_uart.h"
+
+#include "Config.h"
+#include "Disablers.h"
+
+
+/* Standard includes. */
+#include <string.h>
+#include <stdio.h>
+
+/* Kernel includes. */
+#include "FreeRTOS.h"
+#include "task.h"
+
+/* Demo Specific configs. */
+#include "external/demo_config.h"
+
+/* MQTT library includes. */
+#include "core_mqtt.h"
+
+/* Exponential backoff retry include. */
+#include "external/backoff_algorithm.h"
+
+/* Transport interface include. */
+#include "using_plaintext.h"
 
 // TODO: insert other definitions and declarations here
 /*****************************************************************************
@@ -51,7 +74,13 @@ static void prvSetupHardware(void) {
 // SW1 listener thread
 static void vSendMQTT(void *pvParameters) {
 	while (1) {
+		vTaskDelay(50);
 	}
+}
+
+static void idle_delay()
+{
+	vTaskDelay(1);
 }
 
 static void vMeasure(void *pvParameters) {
@@ -59,53 +88,37 @@ static void vMeasure(void *pvParameters) {
 
 	retarget_init();
 
-	ModbusMaster co2(240);
-	co2.begin(9600);
+	ModbusMaster node3(241); // Create modbus object that connects to slave id 241 (HMP60)
+	node3.begin(9600); // all nodes must operate at the same speed!
+	node3.idle(idle_delay); // idle function is called while waiting for reply from slave
+	ModbusRegister RH(&node3, 256, true);
+	ModbusRegister temp(&node3, 257, true);
+	float hum;
+	float t = 0;
 
-	ModbusMaster hmp(241);
-	hmp.begin(9600);
+	while(true) {
 
-	ModbusRegister co2Status(&co2, 0x800, true);
-	ModbusRegister hmpStatus(&hmp, 0x200, true);
+		char buffer[32];
 
-	ModbusRegister co2Data(&co2, 0x100, true);
+		vTaskDelay(2000);
+		DisableScheduler d;
 
-	//	Relative humidity
-	ModbusRegister humidityData(&hmp, 0x100, true);
-	ModbusRegister temperatureData(&hmp, 0x101, true);
-
-
-	int co2Value = 0;
-	int rhValue = 0;
-	int tempValue = 0;
-
-	vTaskDelay(5);
-
-	if(hmpStatus.read())
-	{
-		vTaskDelay(5);
-		tempValue = temperatureData.read() / 10;
-		DEBUGOUT("temp %d\0\n", tempValue);
-
-		vTaskDelay(5);
-		rhValue = humidityData.read() / 10;
-	}
-
-	vTaskDelay(5);
-	if(co2Status.read() == 0)
-	{
-		vTaskDelay(5);
-		co2Value = co2Data.read();
-	}
-	while(1) {
-
+			hum = RH.read()/10.0;
+			t = temp.read()/10.0;
+			//snprintf(buffer, 32, "RH=%5.1f%%", rh);
+			//printf("%s\n",buffer);
 	}
 }
 
 static void vLcdUI(void *pvParameters) {
 	while(1) {
-
+		vTaskDelay(50);
 	}
+}
+
+
+extern "C" {
+  void vStartSimpleMQTTDemo( void ); // ugly - should be in a header
 }
 
 /*****************************************************************************
@@ -138,12 +151,15 @@ int main(void) {
 			(TaskHandle_t*) NULL);
 
 	xTaskCreate(vMeasure, "vMeasure",
-	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+	configMINIMAL_STACK_SIZE * 4, NULL, (tskIDLE_PRIORITY + 3UL),
 			(TaskHandle_t*) NULL);
 
 	xTaskCreate(vLcdUI, "vLcdUI",
 	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
+
+
+	vStartSimpleMQTTDemo();
 
 	/* Start the scheduler */
 	vTaskStartScheduler();

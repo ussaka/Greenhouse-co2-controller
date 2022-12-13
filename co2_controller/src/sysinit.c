@@ -17,11 +17,11 @@
  * retain, install, activate or otherwise use the software.
  */
 
-#if defined(NO_BOARD_LIB)
+ #if defined(NO_BOARD_LIB)
  #include "chip.h"
  #else
-#include "board.h"
-#endif
+ #include "board.h"
+ #endif
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -45,7 +45,8 @@ const uint32_t RTCOscRateIn = 32768;
  ****************************************************************************/
 
 /* Set up and initialize hardware prior to call to main */
-void SystemInit(void) {
+void SystemInit(void)
+{
 #if defined(NO_BOARD_LIB)
 	/* Chip specific SystemInit */
 	Chip_SystemInit();
