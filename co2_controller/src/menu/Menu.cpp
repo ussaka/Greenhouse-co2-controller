@@ -1,4 +1,5 @@
 #include "Menu.h"
+#include "Fmutex.h"
 
 void Menu::send(Event event)
 {
@@ -60,10 +61,15 @@ bool Menu::addProperty(Property& property)
 
 void Menu::display()
 {
+	static Fmutex lock;
+
+	lock.lock();
 	clearDisplay();
 
 	Property& p = *properties[selected];
 	lcd.print(p.getName() + "(" + p.getRange() + ")\n" + (editing ? "* " : "") + p.getValue());
+
+	lock.unlock();
 }
 
 void Menu::clearDisplay()

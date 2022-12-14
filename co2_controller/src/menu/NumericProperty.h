@@ -65,7 +65,10 @@ public:
 		dirty = true;
 
 		if(menu && !menu->isEditing())
+		{
 			value = val;
+			menu->display();
+		}
 	}
 
 private:

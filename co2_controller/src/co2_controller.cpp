@@ -43,7 +43,11 @@
 
 #define BUTTON_SELECT 1, 8
 
-int set_point = 0;
+NumericProperty<int> hum("Humidity", 0, 2000, true, 5);
+NumericProperty<int> temp("Temperature", 0, 2000, true, 5);
+NumericProperty<int> setPoint("Co2 set", 0, 2000, false, 5);
+NumericProperty<int> valve("Valve state", 0, 2000, true, 5);
+NumericProperty<int> co2("Co2 value", 0, 2000, true, 5);
 
 //	EEPROM config
 static Config config;
@@ -51,12 +55,12 @@ static Config config;
 //	Menu event queue to which interrupts push events
 QueueHandle_t menuEvents = xQueueCreate(10, sizeof(Menu::Event));
 
-//	Sensor value queue. Contains Co2, Temperature, humidity and solenoid position
-QueueHandle_t data_q = xQueueCreate(10, sizeof(int) * 4);
-
 /* The following is required if runtime statistics are to be collected
  * Copy the code to the source file where other you initialize hardware */
 extern "C" {
+
+//	Sensor data that is set by vMeasure and read by vMqttTask
+QueueHandle_t sensorData = xQueueCreate(10, sizeof(int) * 5);
 
 void vConfigureTimerForRunTimeStats(void) {
 	Chip_SCT_Init(LPC_SCTSMALL1);
@@ -199,38 +203,40 @@ static void idle_delay() {
 }
 
 static void vMeasure(void *pvParameters) {
-	//std::vector<int> data = { 0, 0, 0, 0 };
-
 	DigitalIoPin co2_valve(0, 27, DigitalIoPin::output, false);
 
-	ModbusMaster hmp(241); // Create modbus object that connects to slave id 241 (HMP60)
-	hmp.begin(9600); // all nodes must operate at the same speed!
-	hmp.idle(idle_delay); // idle function is called while waiting for reply from slave
-	ModbusRegister humidityData(&hmp, 256, true);
-	ModbusRegister temperatureData(&hmp, 257, true);
+	ModbusMaster hmpMaster(241); // Create modbus object that connects to slave id 241 (HMP60)
+	hmpMaster.begin(9600); // all nodes must operate at the same speed!
+	hmpMaster.idle(idle_delay); // idle function is called while waiting for reply from slave
+	ModbusRegister humidityData(&hmpMaster, 256, true);
+	ModbusRegister temperatureData(&hmpMaster, 257, true);
 
-	ModbusMaster co2(240);
-	co2.begin(9600);
-	ModbusRegister co2Data(&co2, 257, true);
+	ModbusMaster co2Master(240);
+	co2Master.begin(9600);
+	ModbusRegister co2Data(&co2Master, 257, true);
 
-	ModbusRegister co2Status(&co2, 0x800, true);
-	ModbusRegister hmpStatus(&hmp, 0x200, true);
+	ModbusRegister co2Status(&co2Master, 0x800, true);
+	ModbusRegister hmpStatus(&hmpMaster, 0x200, true);
 
 	int co2Value = 0;
 	int rhValue = 0;
 	int tempValue = 0;
+
 	int offset = 50;
+	int data[5] { 0 };
 
 	while (true) {
 		vTaskDelay(5);
 
 		if (hmpStatus.read()) {
 			tempValue = temperatureData.read() / 10.0;
-		//	data.push_back(tempValue);
+			temp.setValue(tempValue);
+			data[0] = tempValue;
 			vTaskDelay(5);
 
 			rhValue = humidityData.read() / 10.0;
-			//data.push_back(rhValue);
+			hum.setValue(rhValue);
+			data[1] = rhValue;
 			DEBUGOUT("temp: %d\r\n", tempValue);
 			DEBUGOUT("rh: %d\r\n", rhValue);
 		}
@@ -239,13 +245,15 @@ static void vMeasure(void *pvParameters) {
 		if (co2Status.read() == 0) {
 			vTaskDelay(5);
 			co2Value = co2Data.read() * 10;
+
+			co2.setValue(co2Value);
+			data[2] = co2Value;
 			DEBUGOUT("co2: %d\r\n", co2Value);
 		}
 
 		if (co2Value <= 0) {
 			co2_valve.write(false);
-		} else if (co2Value + offset < set_point) {
-		//	data.push_back(co2Value);
+		} else if (co2Value + offset < setPoint.getRealValue()) {
 			co2_valve.write(true);
 			DEBUGSTR(std::string("Valve on\r\n").c_str());
 		} else {
@@ -253,13 +261,11 @@ static void vMeasure(void *pvParameters) {
 			DEBUGSTR(std::string("Valve off\r\n").c_str());
 		}
 		vTaskDelay(configTICK_RATE_HZ * 5); //5s
-		//data.push_back(co2_valve.read());
-		//xQueueSend(data_q, &data, 100);
 		//DEBUGSTR(std::string("co2: %d\r\n", co2Value).c_str());
+		data[3] = co2_valve.read();
+		data[4] = setPoint.getRealValue();
 
-		co2Value = 0;
-		rhValue = 0;
-		tempValue = 0;
+		xQueueSend(sensorData, &data, 100);
 	}
 
 }
@@ -282,19 +288,13 @@ static void vLcdUI(void *pvParameters) {
 
 	Menu menu(lcd);
 
-	NumericProperty<int> setPoint("Co2 set", 600, 2000, false, 5);
-	NumericProperty<int> co2Value("Co2 value", 0, 2000, false, 5);
-	NumericProperty<int> hum("Humidity", 0, 2000, false, 5);
-	NumericProperty<int> temp("Temperature", 0, 2000, false, 5);
-	NumericProperty<int> valve("Valve state", 0, 2000, false, 5);
-
 	TextProperty ssid("Ssid", "a");
 	TextProperty pass("Password", "a");
 	TextProperty ip("MQTT IP", "1");
 	TextProperty topic("MQTT topic", "a");
 
 	menu.addProperty(setPoint);
-	co2Value.addToMenu(menu);
+	co2.addToMenu(menu);
 	hum.addToMenu(menu);
 	temp.addToMenu(menu);
 	valve.addToMenu(menu);
@@ -306,23 +306,10 @@ static void vLcdUI(void *pvParameters) {
 
 	menu.display();
 
-	//std::vector<int> data = { 0, 0, 0, 0 };
-
 	while (true) {
 		if (xQueueReceive(menuEvents, &event, 5000) == pdTRUE) {
 			menu.send(event);
-			/*
-			 config.set("ssid", ssid.getValue());
-			 config.set("ssidpass", pass.getValue());
-			 config.set("brokerip", ip.getValue());
-			 config.set("setpoint", topic.getValue());
-			 */
 		}
-		/*
-		 if (xQueueReceive(data_q, &data, 100)) {
-		 co2Value.setValue(data[0]);
-		 }
-		 */
 	}
 }
 
@@ -334,10 +321,10 @@ void vStartMqttTask( void )
 {
 	static connection_info info;
 
-	info.ssid = config.get("ssid").c_str();
-	info.ssidpass = config.get("ssidpass").c_str();
-	info.brokerip = config.get("brokerip").c_str();
-	info.brokerport = atoi(config.get("brokerport").c_str());
+	info.ssid = "Miko";//config.get("ssid").c_str();
+	info.ssidpass = "kissa123";//config.get("ssidpass").c_str();
+	info.brokerip = "192.168.43.111";//config.get("brokerip").c_str();
+	info.brokerport = 1883;//atoi(config.get("brokerport").c_str());
 
     xTaskCreate( vMqttTask,          /* Function that implements the task. */
                  "vMqttTask",               /* Text name for the task - only used for debugging. */
