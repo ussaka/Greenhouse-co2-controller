@@ -59,6 +59,7 @@ bool TextProperty::exitOnConfirm()
             value.erase(value.begin() + currentlyEditing, value.end());
 
         currentlyEditing = 0;
+        value.pop_back();
         return true;
     }
 

@@ -79,10 +79,10 @@ void PIN_INT0_IRQHandler(void) {
 	 *	passed since the last interrupt. This is because the rotary encoder might trigger multiple interrupts
 	 *	when turned only once. One downside of this is that when the rotary encoder
 	 *	is being turned fast enough, we will ignore interrupts that happen too quickly */
-	if (currentTicks - lastTicks > 70) {
+	if (currentTicks - lastTicks > 50) {
 		//	Determine which way the rotary encode is being turned
 		Menu::Event dir =
-				Chip_GPIO_GetPinState(LPC_GPIO, SIGA) ?
+				Chip_GPIO_GetPinState(LPC_GPIO, SIGB) ?
 						Menu::Event::Up : Menu::Event::Down;
 		xQueueSendFromISR(menuEvents, (void* )&dir, &higherPriorityWoken);
 	}
@@ -173,7 +173,7 @@ void sendSensorData()
 	data[0] = temp.getRealValue();
 	data[1] = hum.getRealValue();
 	data[2] = co2.getRealValue();
-	data[3] = valve.getRealValue();
+	data[3] = valve.getRealValue() * 100;
 	data[4] = setPoint.getRealValue();
 }
 
@@ -347,19 +347,21 @@ int main(void) {
 
 	config.read();
 
-	if(!config.exists("ssid")) config.set("ssid", "none");
-	if(!config.exists("ssidpass")) config.set("ssidpass", "none");
-	if(!config.exists("brokerip")) config.set("brokerip", "127.0.0.1");
+	if(!config.exists("ssid")) config.set("ssid", "SmartIotMQTT");
+	if(!config.exists("ssidpass")) config.set("ssidpass", "SmartIot");
+	if(!config.exists("brokerip")) config.set("brokerip", "mqtt3.thingspeak.com");
 	if(!config.exists("brokerport")) config.set("brokerport", "1883");
 
 	//config.set("brokerip", "192.168.43.111");
 
 	//	NOTE temporary
-	/*config.set("ssid", "Miko");
+	/*
+	config.set("ssid", "Miko");
 	config.set("ssidpass", "kissa123");
 	config.set("brokerip", "192.168.43.111");
 	config.set("brokerport", "1883");
 	*/
+
 
 	xTaskCreate(vMeasure, "vMeasure",
 	configMINIMAL_STACK_SIZE * 6, NULL, (tskIDLE_PRIORITY + 1UL),

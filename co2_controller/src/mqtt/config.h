@@ -79,7 +79,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
  *
  * #define democonfigCLIENT_IDENTIFIER				"insert here."
  */
-#define democonfigCLIENT_IDENTIFIER				"ESP-MQTT-GROUP-01" // DCAmDzgFFhoKKy8kCBw3NQA
+#define democonfigCLIENT_IDENTIFIER				"DCAmDzgFFhoKKy8kCBw3NQA" // DCAmDzgFFhoKKy8kCBw3NQA
 
 /**
  * @brief MQTT broker end point to connect to.
@@ -89,7 +89,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
  *
  * #define democonfigMQTT_BROKER_ENDPOINT				"insert here."
  */
-#define democonfigMQTT_BROKER_ENDPOINT				"192.168.43.111" // mqtt3.thingspeak.com
+#define democonfigMQTT_BROKER_ENDPOINT				"mqtt3.thingspeak.com" // mqtt3.thingspeak.com
 
 /**
  * @brief The port to use for the demo.
@@ -112,9 +112,9 @@ extern void vLoggingPrintf( const char * pcFormatString,
 #define WIFI_PASS       "kissa123"
 
 // MQTT
-#define USER_NAME		"test"						// DCAmDzgFFhoKKy8kCBw3NQA
-#define PASSWORD		"test"						// qKxqzEzD+xMf2LMg0SU24WYk
-#define TOPIC			"controller/test" 			// channels/1955513/publish
+#define USER_NAME		"DCAmDzgFFhoKKy8kCBw3NQA"						// DCAmDzgFFhoKKy8kCBw3NQA
+#define PASSWORD		"qKxqzEzD+xMf2LMg0SU24WYk"						// qKxqzEzD+xMf2LMg0SU24WYk
+#define TOPIC			"channels/1955513/publish" 			// channels/1955513/publish
 #endif
 
 #endif /* DEMO_CONFIG_H */
