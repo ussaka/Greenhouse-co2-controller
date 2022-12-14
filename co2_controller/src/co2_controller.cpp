@@ -36,7 +36,7 @@
 #include "Disablers.h"
 
 #include "DigitalIoPin.h"
-#include <vector>
+#include "mqtt/connection_info.h"
 
 #define SIGA 0, 5
 #define SIGB 0, 6
@@ -165,7 +165,7 @@ static void idle_delay() {
 }
 
 static void vMeasure(void *pvParameters) {
-	std::vector<int> data = { 0, 0, 0, 0 };
+	//std::vector<int> data = { 0, 0, 0, 0 };
 
 	DigitalIoPin co2_valve(0, 27, DigitalIoPin::output, false);
 
@@ -185,20 +185,18 @@ static void vMeasure(void *pvParameters) {
 	int co2Value = 0;
 	int rhValue = 0;
 	int tempValue = 0;
-	int offset = 5;
+	int offset = 50;
 
 	while (true) {
 		vTaskDelay(5);
 
 		if (hmpStatus.read()) {
 			tempValue = temperatureData.read() / 10.0;
-			data.push_back(tempValue);
+		//	data.push_back(tempValue);
 			vTaskDelay(5);
-			tempValue = temperatureData.read() / 10;
 
-			vTaskDelay(5);
 			rhValue = humidityData.read() / 10.0;
-			data.push_back(rhValue);
+			//data.push_back(rhValue);
 			DEBUGOUT("temp: %d\r\n", tempValue);
 			DEBUGOUT("rh: %d\r\n", rhValue);
 		}
@@ -213,7 +211,7 @@ static void vMeasure(void *pvParameters) {
 		if (co2Value <= 0) {
 			co2_valve.write(false);
 		} else if (co2Value + offset < set_point) {
-			data.push_back(co2Value);
+		//	data.push_back(co2Value);
 			co2_valve.write(true);
 			DEBUGSTR(std::string("Valve on\r\n").c_str());
 		} else {
@@ -221,8 +219,8 @@ static void vMeasure(void *pvParameters) {
 			DEBUGSTR(std::string("Valve off\r\n").c_str());
 		}
 		vTaskDelay(configTICK_RATE_HZ * 5); //5s
-		data.push_back(co2_valve.read());
-		xQueueSend(data_q, &data, 100);
+		//data.push_back(co2_valve.read());
+		//xQueueSend(data_q, &data, 100);
 		//DEBUGSTR(std::string("co2: %d\r\n", co2Value).c_str());
 	}
 
@@ -270,7 +268,7 @@ static void vLcdUI(void *pvParameters) {
 
 	menu.display();
 
-	std::vector<int> data = { 0, 0, 0, 0 };
+	//std::vector<int> data = { 0, 0, 0, 0 };
 
 	while (true) {
 		if (xQueueReceive(menuEvents, &event, 5000) == pdTRUE) {
@@ -291,7 +289,24 @@ static void vLcdUI(void *pvParameters) {
 }
 
 extern "C" {
-void vStartMqttTask(void); // ugly - should be in a header
+	extern void vMqttTask( void * pvParameters );
+}
+
+void vStartMqttTask( void )
+{
+	static connection_info info;
+
+	info.ssid = config.get("ssid").c_str();
+	info.ssidpass = config.get("ssidpass").c_str();
+	info.brokerip = config.get("brokerip").c_str();
+	info.brokerport = atoi(config.get("brokerport").c_str());
+
+    xTaskCreate( vMqttTask,          /* Function that implements the task. */
+                 "vMqttTask",               /* Text name for the task - only used for debugging. */
+				 configMINIMAL_STACK_SIZE * 16, /* Size of stack (in words, not bytes) to allocate for the task. */
+                 &info,                     /* Task parameter - not used in this case. */
+				 (tskIDLE_PRIORITY + 1UL),         /* Task priority, must be between 0 and configMAX_PRIORITIES - 1. */
+                 NULL );                   /* Used to pass out a handle to the created task - not used in this case. */
 }
 
 int main(void) {
