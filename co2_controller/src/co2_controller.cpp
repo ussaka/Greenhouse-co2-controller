@@ -45,7 +45,7 @@
 
 NumericProperty<int> hum("Humidity", 0, 2000, true, 5);
 NumericProperty<int> temp("Temperature", 0, 2000, true, 5);
-NumericProperty<int> setPoint("Co2 set", 0, 2000, false, 5);
+NumericProperty<int> setPoint("Co2 set", 300, 1500, false, 5);
 NumericProperty<int> valve("Valve state", 0, 2000, true, 5);
 NumericProperty<int> co2("Co2 value", 0, 2000, true, 5);
 
@@ -58,9 +58,6 @@ QueueHandle_t menuEvents = xQueueCreate(10, sizeof(Menu::Event));
 /* The following is required if runtime statistics are to be collected
  * Copy the code to the source file where other you initialize hardware */
 extern "C" {
-
-//	Sensor data that is set by vMeasure and read by vMqttTask
-QueueHandle_t sensorData = xQueueCreate(10, sizeof(int) * 5);
 
 void vConfigureTimerForRunTimeStats(void) {
 	Chip_SCT_Init(LPC_SCTSMALL1);
@@ -93,31 +90,6 @@ void PIN_INT0_IRQHandler(void) {
 	portEND_SWITCHING_ISR(higherPriorityWoken);
 }
 
-//	Interrupt handler for the rotary encoder
-void PIN_INT2_IRQHandler(void) {
-	portBASE_TYPE higherPriorityWoken = pdFALSE;
-
-	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(2));
-	NVIC_ClearPendingIRQ(PIN_INT2_IRQn);
-
-	static TickType_t lastTicks = 0;
-	TickType_t currentTicks = xTaskGetTickCountFromISR();
-
-	/*	Only send the direction of the rotary encoder when atleast 40 ticks have
-	 *	passed since the last interrupt. This is because the rotary encoder might trigger multiple interrupts
-	 *	when turned only once. One downside of this is that when the rotary encoder
-	 *	is being turned fast enough, we will ignore interrupts that happen too quickly */
-	if (currentTicks - lastTicks > 70) {
-		//	Determine which way the rotary encode is being turned
-		Menu::Event dir = Menu::Event::Down;
-
-		xQueueSendFromISR(menuEvents, (void* )&dir, &higherPriorityWoken);
-	}
-
-	lastTicks = currentTicks;
-	portEND_SWITCHING_ISR(higherPriorityWoken);
-}
-
 //	Interrupt handler for the confirm button
 void PIN_INT1_IRQHandler(void) {
 	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(1));
@@ -126,7 +98,7 @@ void PIN_INT1_IRQHandler(void) {
 
 	static TickType_t lastTicks = 0;
 	TickType_t currentTicks = xTaskGetTickCountFromISR();
-	if (currentTicks - lastTicks > 200) {
+	if (currentTicks - lastTicks > 500) {
 		Menu::Event event = Menu::Event::Confirm;
 		xQueueSendFromISR(menuEvents, (void* )&event, &higherPriorityWoken);
 	}
@@ -165,7 +137,6 @@ static void setupGPIOInterrupts(void) {
 
 	/* Configure interrupt channels for the GPIO pins in INMUX block */
 	Chip_INMUX_PinIntSel(0, SIGA); // SIGA
-	Chip_INMUX_PinIntSel(2, SIGB); // SIGA
 	Chip_INMUX_PinIntSel(1, BUTTON_SELECT);
 
 	/* Configure channel interrupts as edge sensitive and falling edge interrupt */
@@ -177,10 +148,6 @@ static void setupGPIOInterrupts(void) {
 	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(1));
 	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(1));
 
-	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(2));
-	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(2));
-	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(2));
-
 	/* Enable interrupts in the NVIC */
 	NVIC_ClearPendingIRQ(PIN_INT0_IRQn);
 	NVIC_SetPriority(PIN_INT0_IRQn,
@@ -191,15 +158,22 @@ static void setupGPIOInterrupts(void) {
 	NVIC_SetPriority(PIN_INT1_IRQn,
 	configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
 	NVIC_EnableIRQ(PIN_INT1_IRQn);
-
-	NVIC_ClearPendingIRQ(PIN_INT2_IRQn);
-	NVIC_SetPriority(PIN_INT2_IRQn,
-	configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
-	NVIC_EnableIRQ(PIN_INT2_IRQn);
 }
 
 static void idle_delay() {
 	vTaskDelay(1);
+}
+
+void sendSensorData()
+{
+	DEBUGOUT("Send sensor data\r\n");
+	extern int data[5];
+
+	data[0] = temp.getRealValue();
+	data[1] = hum.getRealValue();
+	data[2] = co2.getRealValue();
+	data[3] = valve.getRealValue();
+	data[4] = setPoint.getRealValue();
 }
 
 static void vMeasure(void *pvParameters) {
@@ -223,7 +197,6 @@ static void vMeasure(void *pvParameters) {
 	int tempValue = 0;
 
 	int offset = 50;
-	int data[5] { 0 };
 
 	while (true) {
 		vTaskDelay(5);
@@ -231,12 +204,10 @@ static void vMeasure(void *pvParameters) {
 		if (hmpStatus.read()) {
 			tempValue = temperatureData.read() / 10.0;
 			temp.setValue(tempValue);
-			data[0] = tempValue;
 			vTaskDelay(5);
 
 			rhValue = humidityData.read() / 10.0;
 			hum.setValue(rhValue);
-			data[1] = rhValue;
 			DEBUGOUT("temp: %d\r\n", tempValue);
 			DEBUGOUT("rh: %d\r\n", rhValue);
 		}
@@ -245,9 +216,7 @@ static void vMeasure(void *pvParameters) {
 		if (co2Status.read() == 0) {
 			vTaskDelay(5);
 			co2Value = co2Data.read() * 10;
-
 			co2.setValue(co2Value);
-			data[2] = co2Value;
 			DEBUGOUT("co2: %d\r\n", co2Value);
 		}
 
@@ -260,12 +229,11 @@ static void vMeasure(void *pvParameters) {
 			co2_valve.write(false);
 			DEBUGSTR(std::string("Valve off\r\n").c_str());
 		}
-		vTaskDelay(configTICK_RATE_HZ * 5); //5s
-		//DEBUGSTR(std::string("co2: %d\r\n", co2Value).c_str());
-		data[3] = co2_valve.read();
-		data[4] = setPoint.getRealValue();
 
-		xQueueSend(sensorData, &data, 100);
+		valve.setValue(co2_valve.read());
+
+		sendSensorData();
+		vTaskDelay(configTICK_RATE_HZ * 5); //5s
 	}
 
 }
@@ -288,10 +256,10 @@ static void vLcdUI(void *pvParameters) {
 
 	Menu menu(lcd);
 
-	TextProperty ssid("Ssid", "a");
-	TextProperty pass("Password", "a");
-	TextProperty ip("MQTT IP", "1");
-	TextProperty topic("MQTT topic", "a");
+	TextProperty ssid("Ssid", config.get("ssid"));
+	TextProperty pass("Password", config.get("ssidpass"));
+	TextProperty ip("MQTT IP", config.get("brokerip"));
+	//TextProperty topic("MQTT topic", "a");
 
 	menu.addProperty(setPoint);
 	co2.addToMenu(menu);
@@ -302,13 +270,39 @@ static void vLcdUI(void *pvParameters) {
 	menu.addProperty(ssid);
 	menu.addProperty(pass);
 	menu.addProperty(ip);
-	menu.addProperty(topic);
+	//menu.addProperty(topic);
 
 	menu.display();
+	setPoint.setValue(700);
 
 	while (true) {
 		if (xQueueReceive(menuEvents, &event, 5000) == pdTRUE) {
 			menu.send(event);
+
+			if(event == Menu::Event::Confirm && !menu.isEditing())
+			{
+				Property* selected = menu.getSelected();
+				bool restart = true;
+
+				if(selected == &ssid)
+					config.set("ssid", selected->getValue());
+
+				else if(selected == &pass)
+					config.set("ssidpass", selected->getValue());
+
+				else if(selected == &ip)
+					config.set("brokerip", selected->getValue());
+
+				else
+				{
+					restart = false;
+				}
+
+				if(restart)
+				{
+					NVIC_SystemReset();
+				}
+			}
 		}
 	}
 }
@@ -321,10 +315,10 @@ void vStartMqttTask( void )
 {
 	static connection_info info;
 
-	info.ssid = "Miko";//config.get("ssid").c_str();
-	info.ssidpass = "kissa123";//config.get("ssidpass").c_str();
-	info.brokerip = "192.168.43.111";//config.get("brokerip").c_str();
-	info.brokerport = 1883;//atoi(config.get("brokerport").c_str());
+	info.ssid = config.get("ssid").c_str();
+	info.ssidpass = config.get("ssidpass").c_str();
+	info.brokerip = config.get("brokerip").c_str();
+	info.brokerport = atoi(config.get("brokerport").c_str());
 
     xTaskCreate( vMqttTask,          /* Function that implements the task. */
                  "vMqttTask",               /* Text name for the task - only used for debugging. */
@@ -350,8 +344,24 @@ int main(void) {
 	heap_monitor_setup();
 	setupGPIOInterrupts();
 
+	config.read();
+
+	if(!config.exists("ssid")) config.set("ssid", "none");
+	if(!config.exists("ssidpass")) config.set("ssidpass", "none");
+	if(!config.exists("brokerip")) config.set("brokerip", "127.0.0.1");
+	if(!config.exists("brokerport")) config.set("brokerport", "1883");
+
+	//config.set("brokerip", "192.168.43.111");
+
+	//	NOTE temporary
+	/*config.set("ssid", "Miko");
+	config.set("ssidpass", "kissa123");
+	config.set("brokerip", "192.168.43.111");
+	config.set("brokerport", "1883");
+	*/
+
 	xTaskCreate(vMeasure, "vMeasure",
-	configMINIMAL_STACK_SIZE * 6, NULL, (tskIDLE_PRIORITY + 2UL),
+	configMINIMAL_STACK_SIZE * 6, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
 
 	xTaskCreate(vLcdUI, "vLcdUI",
