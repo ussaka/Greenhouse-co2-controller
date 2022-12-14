@@ -38,7 +38,7 @@
  */
 
 /* Include header that defines log levels. */
-#include "logging_levels.h"
+#include <mqtt/logging_levels.h>
 
 /* Logging configuration for the Sockets. */
 #ifndef LIBRARY_LOG_NAME
@@ -63,7 +63,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
 #endif
 #endif
 
-#include "logging_stack.h"
+#include <mqtt/logging_stack.h>
 
 /************ End of logging configuration ****************/
 

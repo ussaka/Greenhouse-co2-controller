@@ -47,6 +47,8 @@
  */
 
 /* Standard includes. */
+#include <mqtt/config.h>
+#include <mqtt/using_plaintext.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -55,16 +57,12 @@
 #include "task.h"
 
 /* Demo Specific configs. */
-#include "demo_config.h"
-
-/* MQTT library includes. */
 #include "core_mqtt.h"
 
 /* Exponential backoff retry include. */
 #include "backoff_algorithm.h"
 
 /* Transport interface include. */
-#include "using_plaintext.h"
 
 
 
@@ -206,7 +204,7 @@ struct NetworkContext
  * @param[in] pvParameters Parameters as passed at the time of task creation. Not
  * used in this example.
  */
-static void prvMQTTDemoTask( void * pvParameters );
+static void vMqttTask( void * pvParameters );
 
 
 /**
@@ -364,7 +362,7 @@ static MQTTFixedBuffer_t xBuffer =
  * @brief Create the task that demonstrates the MQTT API over a plaintext TCP
  * connection.
  */
-void vStartSimpleMQTTDemo( void )
+void vStartMqttTask( void )
 {
     /* This example uses a single application task, which in turn is used to
      * connect, subscribe, publish, unsubscribe and disconnect from the MQTT
@@ -377,7 +375,7 @@ void vStartSimpleMQTTDemo( void )
      * state or call the MQTT_ProcessLoop() API function. Using an agent task
      * also enables multiple application tasks to more easily share a single
      * MQTT connection.*/
-    xTaskCreate( prvMQTTDemoTask,          /* Function that implements the task. */
+    xTaskCreate( vMqttTask,          /* Function that implements the task. */
                  "DemoTask",               /* Text name for the task - only used for debugging. */
                  democonfigDEMO_STACKSIZE, /* Size of stack (in words, not bytes) to allocate for the task. */
                  NULL,                     /* Task parameter - not used in this case. */
@@ -386,7 +384,7 @@ void vStartSimpleMQTTDemo( void )
 }
 /*-----------------------------------------------------------*/
 
-static void prvMQTTDemoTask( void * pvParameters )
+static void vMqttTask( void * pvParameters )
 {
     uint32_t ulPublishCount = 0U, ulTopicCount = 0U;
     const uint32_t ulMaxPublishCount = 5UL;

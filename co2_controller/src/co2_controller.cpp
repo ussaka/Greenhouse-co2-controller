@@ -191,7 +191,7 @@ static void vLcdUI(void *pvParameters)
 }
 
 extern "C" {
-  void vStartSimpleMQTTDemo( void ); // ugly - should be in a header
+  void vStartMqttTask( void ); // ugly - should be in a header
 }
 
 int main(void) {
@@ -229,7 +229,7 @@ int main(void) {
 	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
 
-	vStartSimpleMQTTDemo();
+	vStartMqttTask();
 	/* Start the scheduler */
 	vTaskStartScheduler();
 
