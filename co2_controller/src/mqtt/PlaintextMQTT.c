@@ -366,7 +366,9 @@ static MQTTFixedBuffer_t xBuffer =
 
 /*-----------------------------------------------------------*/
 
-extern QueueHandle_t sensorData;
+/*	This is really stupid but if we extern this elsewhere and
+ * 	edit it there, we can always have up to date data */
+int data[5] = { 0 };
 
 void vMqttTask( void * pvParameters )
 {
@@ -392,24 +394,24 @@ void vMqttTask( void * pvParameters )
         xNetworkStatus = prvConnectToServerWithBackoffRetries( &xNetworkContext, info );
         prvCreateMQTTConnectionWithBroker( &xMQTTContext, &xNetworkContext );
 
-        int data[5];
-		if(xQueueReceive(sensorData, &data, 5000) == pdTRUE) {
-			int temp = data[0];
-			int rh = data[1];
-			int co2 = data[2];
-			int valve = data[3];
-			int setPoint = data[5];
+		int temp = data[0];
+		int rh = data[1];
+		int co2 = data[2];
+		int valve = data[3];
+		int setPoint = data[4];
 
-			char msg[256];
-			sprintf(msg, "field1=%d&field2=%d&field3=%d&field4=%dfield5=%d", co2, rh, temp, valve, setPoint);
+		DEBUGOUT("temp %d rh %d co2 %d valve %d sp %d\r\n", temp, rh, co2, valve, setPoint);
 
-			prvMQTTPublishToTopic( &xMQTTContext , msg );
-		}
+		char msg[256];
+		sprintf(msg, "field1=%d&field2=%d&field3=%d&field4=%d&field5=%d", co2, rh, temp, valve, setPoint);
+
+		prvMQTTPublishToTopic( &xMQTTContext , msg );
 
         xMQTTStatus = MQTT_Disconnect( &xMQTTContext );
 		xNetworkStatus = Plaintext_FreeRTOS_Disconnect( &xNetworkContext );
 
-		vTaskDelay(configTICK_RATE_HZ * 60 * 5);
+		//vTaskDelay(configTICK_RATE_HZ * 60 * 5);
+		vTaskDelay(configTICK_RATE_HZ * 5);
     }
 }
 /*-----------------------------------------------------------*/
