@@ -36,6 +36,7 @@
 #include "Disablers.h"
 
 #include "DigitalIoPin.h"
+#include <vector>
 
 #define SIGA 0, 5
 #define SIGB 0, 6
@@ -47,6 +48,9 @@ static Config config;
 
 //	Menu event queue to which interrupts push events
 QueueHandle_t menuEvents = xQueueCreate(10, sizeof(Menu::Event));
+
+//	Sensor value queue. Contains Co2, Temperature, humidity and solenoid position
+QueueHandle_t data_q = xQueueCreate(10, sizeof(int) * 4);
 
 /* The following is required if runtime statistics are to be collected
  * Copy the code to the source file where other you initialize hardware */
@@ -70,7 +74,7 @@ void PIN_INT0_IRQHandler(void)
 	TickType_t currentTicks = xTaskGetTickCountFromISR();
 
 	/*	Only send the direction of the rotary encoder when atleast 40 ticks have
-	 *	passed. This is because the rotary encoder might trigger multiple interrupts
+	 *	passed since the last interrupt. This is because the rotary encoder might trigger multiple interrupts
 	 *	when turned only once. One downside of this is that when the rotary encoder
 	 *	is being turned fast enough, we will ignore interrupts that happen too quickly */
 	if(currentTicks - lastTicks > 40)
@@ -152,15 +156,15 @@ static void idle_delay()
 	vTaskDelay(1);
 }
 
-// SW1 listener thread
 static void vSendMQTT(void *pvParameters) {
 	while (1) {
 		vTaskDelay(50);
 	}
 }
 
-
 static void vMeasure(void *pvParameters) {
+	std::vector <int> data;
+
 	DigitalIoPin co2_valve(0, 27, DigitalIoPin::output, false);
 
 	ModbusMaster hmp(241); // Create modbus object that connects to slave id 241 (HMP60)
@@ -171,7 +175,7 @@ static void vMeasure(void *pvParameters) {
 
 	ModbusMaster co2(240);
 	co2.begin(9600);
-	ModbusRegister co2Data(&co2, 256, true);
+	ModbusRegister co2Data(&co2, 257, true);
 
 	ModbusRegister co2Status(&co2, 0x800, true);
 	ModbusRegister hmpStatus(&hmp, 0x200, true);
@@ -180,6 +184,7 @@ static void vMeasure(void *pvParameters) {
 	int rhValue = 0;
 	int tempValue = 0;
 	int set_point = 750;
+	int offset = 20;
 
 	while (true)
 	{
@@ -187,22 +192,28 @@ static void vMeasure(void *pvParameters) {
 
 		if (hmpStatus.read())
 		{
-			tempValue = temperatureData.read() / 10;
+			tempValue = temperatureData.read() / 10.0;
+			data.push_back(tempValue);
 			vTaskDelay(5);
-			rhValue = humidityData.read() / 10;
+			rhValue = humidityData.read() / 10.0;
+			data.push_back(rhValue);
 		}
 		if (co2Status.read() == 0)
 		{
 			vTaskDelay(5);
-			co2Value = co2Data.read();
-			if (co2Value + 20 < set_point) {
+			co2Value = co2Data.read() / 10.0;
+			if (co2Value + offset < set_point) {
+				data.push_back(co2Value);
 				co2_valve.write(true);
-				DEBUGSTR(std::string("co2: %d\r\n", co2Value).c_str());
 				DEBUGSTR(std::string("Valve on\r\n").c_str());
 			}
 		}
-		vTaskDelay(2000);
+		vTaskDelay(configTICK_RATE_HZ * 5); //5s
 		co2_valve.write(false);
+		data.push_back(co2_valve.read());
+		xQueueSend(data_q, &data, 100);
+		DEBUGOUT("co2: %d\r\n", co2Value);
+		//DEBUGSTR(std::string("co2: %d\r\n", co2Value).c_str());
 		DEBUGSTR(std::string("Valve off\r\n").c_str());
 	}
 }
@@ -229,13 +240,19 @@ static void vLcdUI(void *pvParameters)
 	lcd.begin(16, 2);
 
 	Menu::Event event;
-
 	Menu menu(lcd);
+
+	NumericProperty <int> setPoint("setpoint", 0, 2000, false, 5);
+	menu.addProperty(setPoint);
+
+	menu.display();
 
 	while(true)
 	{
 		if(xQueueReceive(menuEvents, &event, 5000) == pdTRUE)
+		{
 			menu.send(event);
+		}
 
 		//float rh;
 		//char buffer[32];
@@ -270,9 +287,8 @@ int main(void) {
 #endif
 
 	heap_monitor_setup();
-	DEBUGSTR("Reading config\r\n");
 	config.read();
-/*
+
 	if(!config.exists("ssid"))
 		config.set("ssid", "none");
 
@@ -284,11 +300,6 @@ int main(void) {
 
 	if(!config.exists("setpoint"))
 		config.set("setpoint", "0");
-*/
-	DEBUGSTR(std::string("ssid is " + config.get("ssid") + "\r\n").c_str());
-	DEBUGSTR(std::string("ssidpass is " + config.get("ssidpass") + "\r\n").c_str());
-	DEBUGSTR(std::string("brokerip is " + config.get("brokerip") + "\r\n").c_str());
-	DEBUGSTR(std::string("setpoint is " + config.get("setpoint") + "\r\n").c_str());
 
 	// initialize RIT (= enable clocking etc.)
 	//Chip_RIT_Init(LPC_RITIMER);

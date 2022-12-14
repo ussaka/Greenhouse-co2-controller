@@ -20,6 +20,7 @@ public:
 
 	virtual void stopEdit(bool discard) = 0;
 	virtual void input(bool up) = 0;
+	virtual bool exitOnConfirm();
 
 protected:
 	std::string name;

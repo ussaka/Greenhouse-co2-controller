@@ -8,9 +8,15 @@ void Menu::send(Event event)
 		{
 			case Event::Up: properties[selected]->input(true); break;
 			case Event::Down: properties[selected]->input(false); break;
-
 			case Event::Back: properties[selected]->stopEdit(true); editing = false; break;
-			case Event::Confirm: properties[selected]->stopEdit(false); editing = false; break;
+
+			case Event::Confirm:
+			 	if(properties[selected]->exitOnConfirm())
+				{
+					properties[selected]->stopEdit(false);
+					editing = false;
+				}
+			break;
 		}
 
 		display();

@@ -18,3 +18,8 @@ bool Property::isDirty()
 
 	return was;
 }
+
+bool Property::exitOnConfirm()
+{
+	return true;
+}
