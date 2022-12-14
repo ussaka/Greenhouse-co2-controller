@@ -34,7 +34,6 @@
 #include "menu/NumericProperty.h"
 #include "Disablers.h"
 
-<<<<<<< HEAD
 #include "DigitalIoPin.h"
 #include <vector>
 
@@ -48,9 +47,7 @@ static Config config;
 
 //	Menu event queue to which interrupts push events
 QueueHandle_t menuEvents = xQueueCreate(10, sizeof(Menu::Event));
-=======
 // TODO: insert other definitions and declarations here
->>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 
 //	Sensor value queue. Contains Co2, Temperature, humidity and solenoid position
 QueueHandle_t data_q = xQueueCreate(10, sizeof(int) * 4);
@@ -65,7 +62,6 @@ void vConfigureTimerForRunTimeStats( void ) {
 	LPC_SCTSMALL1->CTRL_U = SCT_CTRL_PRE_L(255) | SCT_CTRL_CLRCTR_L; // set prescaler to 256 (255 + 1), and start timer
 }
 
-<<<<<<< HEAD
 //	Interrupt handler for the rotary encoder
 void PIN_INT0_IRQHandler(void)
 {
@@ -106,8 +102,6 @@ void PIN_INT1_IRQHandler(void)
 	portEND_SWITCHING_ISR(higherPriorityWoken);
 }
 
-=======
->>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 }
 /* end runtime statictics collection */
 
@@ -164,13 +158,10 @@ static void vSendMQTT(void *pvParameters) {
 }
 
 static void vMeasure(void *pvParameters) {
-<<<<<<< HEAD
 	std::vector <int> data;
 
 	DigitalIoPin co2_valve(0, 27, DigitalIoPin::output, false);
 
-=======
->>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 	ModbusMaster hmp(241); // Create modbus object that connects to slave id 241 (HMP60)
 	hmp.begin(9600); // all nodes must operate at the same speed!
 	hmp.idle(idle_delay); // idle function is called while waiting for reply from slave
@@ -187,11 +178,8 @@ static void vMeasure(void *pvParameters) {
 	int co2Value = 0;
 	int rhValue = 0;
 	int tempValue = 0;
-<<<<<<< HEAD
 	int set_point = 750;
 	int offset = 20;
-=======
->>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 
 	while (true)
 	{
@@ -199,14 +187,11 @@ static void vMeasure(void *pvParameters) {
 
 		if (hmpStatus.read())
 		{
-<<<<<<< HEAD
 			tempValue = temperatureData.read() / 10.0;
 			data.push_back(tempValue);
-=======
 			vTaskDelay(5);
 			tempValue = temperatureData.read() / 10;
 
->>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 			vTaskDelay(5);
 			rhValue = humidityData.read() / 10.0;
 			data.push_back(rhValue);
@@ -216,7 +201,6 @@ static void vMeasure(void *pvParameters) {
 		if (co2Status.read() == 0)
 		{
 			vTaskDelay(5);
-<<<<<<< HEAD
 			co2Value = co2Data.read() / 10.0;
 			if (co2Value + offset < set_point) {
 				data.push_back(co2Value);
@@ -231,10 +215,8 @@ static void vMeasure(void *pvParameters) {
 		DEBUGOUT("co2: %d\r\n", co2Value);
 		//DEBUGSTR(std::string("co2: %d\r\n", co2Value).c_str());
 		DEBUGSTR(std::string("Valve off\r\n").c_str());
-=======
 			co2Value = co2Data.read();
 		}
->>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 	}
 }
 
@@ -259,12 +241,9 @@ static void vLcdUI(void *pvParameters)
 	LiquidCrystal lcd(&rs, &en, &d4, &d5, &d6, &d7);
 	lcd.begin(16, 2);
 
-<<<<<<< HEAD
 	Menu::Event event;
-=======
 	int val;
 
->>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 	Menu menu(lcd);
 
 	NumericProperty <int> setPoint("setpoint", 0, 2000, false, 5);
@@ -274,18 +253,10 @@ static void vLcdUI(void *pvParameters)
 
 	while(true)
 	{
-<<<<<<< HEAD
 		if(xQueueReceive(menuEvents, &event, 5000) == pdTRUE)
 		{
 			menu.send(event);
 		}
-=======
-//		if(xQueueReceive(interrupt_q, &val, 5000) == pdTRUE)
-//		{
-//			Menu::Event event = static_cast <Menu::Event> (val);
-//			menu.send(event);
-//		}
->>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 
 		//float rh;
 		//char buffer[32];
@@ -320,7 +291,6 @@ int main(void) {
 #endif
 
 	heap_monitor_setup();
-<<<<<<< HEAD
 	config.read();
 
 	if(!config.exists("ssid"))
@@ -334,8 +304,6 @@ int main(void) {
 
 	if(!config.exists("setpoint"))
 		config.set("setpoint", "0");
-=======
->>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 
 	// initialize RIT (= enable clocking etc.)
 	//Chip_RIT_Init(LPC_RITIMER);
