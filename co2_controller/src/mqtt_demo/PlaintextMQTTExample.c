@@ -409,11 +409,11 @@ static void prvMQTTDemoTask( void * pvParameters )
         xNetworkStatus = prvConnectToServerWithBackoffRetries( &xNetworkContext );
         prvCreateMQTTConnectionWithBroker( &xMQTTContext, &xNetworkContext );
 
-        co2 = 1;
-        rh = 2;
-        temp = 3;
-        valve = 4;
-        setPoint = 5;
+        int co2 = 1;
+        int rh = 2;
+        int temp = 3;
+        int valve = 4;
+        int setPoint = 5;
 
         char msg[256];
         sprintf(msg, "field1=%d&field2=%d&field3=%d&field4=%dfield5=%d", co2, rh, temp, valve, setPoint);
