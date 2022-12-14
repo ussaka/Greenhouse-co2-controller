@@ -1,6 +1,7 @@
 # IDE specific stuff
 *.idea
 *.vscode
+*/.settings/
 
 #General build artifacts
 *.mk

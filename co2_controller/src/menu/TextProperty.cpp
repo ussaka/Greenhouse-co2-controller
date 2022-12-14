@@ -3,6 +3,8 @@
 TextProperty::TextProperty(const std::string &name, const std::string& initialValue, bool constant)
     : Property(name, constant), value(initialValue), oldValue(initialValue)
 {
+    if(value.empty())
+        value = ".";
 }
 
 std::string TextProperty::getValue()
@@ -31,8 +33,6 @@ void TextProperty::stopEdit(bool discard)
 void TextProperty::input(bool up)
 {
     const unsigned asciiLength = 95;
-    if(currentlyEditing >= value.size())
-        value += ascii[selected];
 
     if(up)
     {
@@ -64,5 +64,7 @@ bool TextProperty::exitOnConfirm()
 
     //  If we're not exiting, move on to the next character
     currentlyEditing++;
+    value += ".";
+
     return false;
 }
