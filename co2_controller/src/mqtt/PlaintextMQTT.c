@@ -47,6 +47,8 @@
  */
 
 /* Standard includes. */
+#include <mqtt/config.h>
+#include <mqtt/using_plaintext.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -55,16 +57,12 @@
 #include "task.h"
 
 /* Demo Specific configs. */
-#include "demo_config.h"
-
-/* MQTT library includes. */
 #include "core_mqtt.h"
 
 /* Exponential backoff retry include. */
 #include "backoff_algorithm.h"
 
 /* Transport interface include. */
-#include "using_plaintext.h"
 
 
 
@@ -206,7 +204,7 @@ struct NetworkContext
  * @param[in] pvParameters Parameters as passed at the time of task creation. Not
  * used in this example.
  */
-static void prvMQTTDemoTask( void * pvParameters );
+static void vMqttTask( void * pvParameters );
 
 
 /**
@@ -364,7 +362,7 @@ static MQTTFixedBuffer_t xBuffer =
  * @brief Create the task that demonstrates the MQTT API over a plaintext TCP
  * connection.
  */
-void vStartSimpleMQTTDemo( void )
+void vStartMqttTask( void )
 {
     /* This example uses a single application task, which in turn is used to
      * connect, subscribe, publish, unsubscribe and disconnect from the MQTT
@@ -377,16 +375,16 @@ void vStartSimpleMQTTDemo( void )
      * state or call the MQTT_ProcessLoop() API function. Using an agent task
      * also enables multiple application tasks to more easily share a single
      * MQTT connection.*/
-    xTaskCreate( prvMQTTDemoTask,          /* Function that implements the task. */
-                 "DemoTask",               /* Text name for the task - only used for debugging. */
+    xTaskCreate( vMqttTask,          /* Function that implements the task. */
+                 "vMqttTask",               /* Text name for the task - only used for debugging. */
                  democonfigDEMO_STACKSIZE, /* Size of stack (in words, not bytes) to allocate for the task. */
                  NULL,                     /* Task parameter - not used in this case. */
-                 tskIDLE_PRIORITY,         /* Task priority, must be between 0 and configMAX_PRIORITIES - 1. */
+				 (tskIDLE_PRIORITY + 1UL),         /* Task priority, must be between 0 and configMAX_PRIORITIES - 1. */
                  NULL );                   /* Used to pass out a handle to the created task - not used in this case. */
 }
 /*-----------------------------------------------------------*/
 
-static void prvMQTTDemoTask( void * pvParameters )
+static void vMqttTask( void * pvParameters )
 {
     uint32_t ulPublishCount = 0U, ulTopicCount = 0U;
     const uint32_t ulMaxPublishCount = 5UL;
@@ -423,7 +421,7 @@ static void prvMQTTDemoTask( void * pvParameters )
         xMQTTStatus = MQTT_Disconnect( &xMQTTContext );
 		xNetworkStatus = Plaintext_FreeRTOS_Disconnect( &xNetworkContext );
 
-		vTaskDelay(1000);
+		vTaskDelay(configTICK_RATE_HZ * 5);
     }
 }
 /*-----------------------------------------------------------*/
@@ -522,7 +520,13 @@ static void prvCreateMQTTConnectionWithBroker( MQTTContext_t * pxMQTTContext,
     xConnectInfo.pClientIdentifier = democonfigCLIENT_IDENTIFIER;
     xConnectInfo.clientIdentifierLength = ( uint16_t ) strlen( democonfigCLIENT_IDENTIFIER );
 
-    /* Set MQTT keep-alive period. It is the responsibility of the application to ensure
+    xConnectInfo.pUserName = USER_NAME;
+    xConnectInfo.userNameLength = ( uint16_t ) strlen( USER_NAME);
+
+    xConnectInfo.pPassword = PASSWORD;
+	xConnectInfo.passwordLength = ( uint16_t ) strlen( PASSWORD );
+
+	/* Set MQTT keep-alive period. It is the responsibility of the application to ensure
      * that the interval between Control Packets being sent does not exceed the Keep Alive value.
      * In the absence of sending any other Control Packets, the Client MUST send a PINGREQ Packet. */
     xConnectInfo.keepAliveSeconds = mqttexampleKEEP_ALIVE_TIMEOUT_SECONDS;
@@ -673,8 +677,8 @@ static void prvMQTTPublishToTopic( MQTTContext_t * pxMQTTContext, char* msg )
     /* This demo uses QoS0. */
     xMQTTPublishInfo.qos = MQTTQoS0;
     xMQTTPublishInfo.retain = false;
-    xMQTTPublishInfo.pTopicName = mqttexampleTOPIC;
-    xMQTTPublishInfo.topicNameLength = ( uint16_t ) strlen( mqttexampleTOPIC );
+    xMQTTPublishInfo.pTopicName = TOPIC;
+    xMQTTPublishInfo.topicNameLength = ( uint16_t ) strlen( TOPIC );
 #if 0
     xMQTTPublishInfo.pPayload = mqttexampleMESSAGE;
     xMQTTPublishInfo.payloadLength = strlen( mqttexampleMESSAGE );

@@ -21,7 +21,6 @@
 // TODO: insert other include files here
 #include "FreeRTOS.h"
 #include "task.h"
-#include "queue.h"
 #include "semphr.h"
 #include "heap_lock_monitor.h"
 #include "retarget_uart.h"
@@ -35,6 +34,7 @@
 #include "menu/NumericProperty.h"
 #include "Disablers.h"
 
+<<<<<<< HEAD
 #include "DigitalIoPin.h"
 #include <vector>
 
@@ -48,6 +48,9 @@ static Config config;
 
 //	Menu event queue to which interrupts push events
 QueueHandle_t menuEvents = xQueueCreate(10, sizeof(Menu::Event));
+=======
+// TODO: insert other definitions and declarations here
+>>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 
 //	Sensor value queue. Contains Co2, Temperature, humidity and solenoid position
 QueueHandle_t data_q = xQueueCreate(10, sizeof(int) * 4);
@@ -62,6 +65,7 @@ void vConfigureTimerForRunTimeStats( void ) {
 	LPC_SCTSMALL1->CTRL_U = SCT_CTRL_PRE_L(255) | SCT_CTRL_CLRCTR_L; // set prescaler to 256 (255 + 1), and start timer
 }
 
+<<<<<<< HEAD
 //	Interrupt handler for the rotary encoder
 void PIN_INT0_IRQHandler(void)
 {
@@ -102,23 +106,30 @@ void PIN_INT1_IRQHandler(void)
 	portEND_SWITCHING_ISR(higherPriorityWoken);
 }
 
+=======
+>>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 }
+/* end runtime statictics collection */
 
 static void setupGPIOInterrupts(void) {
 	/* Initialise PININT driver */
 	Chip_PININT_Init(LPC_GPIO_PIN_INT);
 
-	//	Configure SIG A of rotary encoder as an input
-	Chip_IOCON_PinMuxSet(LPC_IOCON, SIGA, (IOCON_DIGMODE_EN | IOCON_MODE_PULLUP));
+	#define SIGA 0, 5
+	#define SIGB 0, 6
+
+	#define BUTTON_SELECT
+
+	/* Set pins back to GPIO and configure as inputs*/
+	// SIGA
+	Chip_IOCON_PinMuxSet(LPC_IOCON, SIGA,
+			(IOCON_DIGMODE_EN | IOCON_MODE_PULLUP));
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO, SIGA);
 
-	//	Configure SIG B of rotary encoder as an input
-	Chip_IOCON_PinMuxSet(LPC_IOCON, SIGB, (IOCON_DIGMODE_EN | IOCON_MODE_PULLUP));
+	// SIGB
+	Chip_IOCON_PinMuxSet(LPC_IOCON, SIGB,
+			(IOCON_DIGMODE_EN | IOCON_MODE_PULLUP));
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO, SIGB);
-
-	//	Configure the confirm button as an input
-	Chip_IOCON_PinMuxSet(LPC_IOCON, BUTTON_SELECT, (IOCON_DIGMODE_EN | IOCON_MODE_PULLUP) | IOCON_INV_EN);
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO, BUTTON_SELECT);
 
 	/* Enable PININT clock */
 	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_PININT);
@@ -128,27 +139,17 @@ static void setupGPIOInterrupts(void) {
 
 	/* Configure interrupt channels for the GPIO pins in INMUX block */
 	Chip_INMUX_PinIntSel(0, SIGA); // SIGA
-	Chip_INMUX_PinIntSel(1, BUTTON_SELECT); // SIGA
 
 	/* Configure channel interrupts as edge sensitive and falling edge interrupt */
 	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(0));
 	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(0));
 	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(0));
 
-	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(1));
-	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(1));
-	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(1));
-
 	/* Enable interrupts in the NVIC */
 	NVIC_ClearPendingIRQ(PIN_INT0_IRQn);
 	NVIC_SetPriority(PIN_INT0_IRQn,
 	configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
 	NVIC_EnableIRQ(PIN_INT0_IRQn);
-
-	NVIC_ClearPendingIRQ(PIN_INT1_IRQn);
-	NVIC_SetPriority(PIN_INT1_IRQn,
-	configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
-	NVIC_EnableIRQ(PIN_INT1_IRQn);
 }
 
 static void idle_delay()
@@ -163,10 +164,13 @@ static void vSendMQTT(void *pvParameters) {
 }
 
 static void vMeasure(void *pvParameters) {
+<<<<<<< HEAD
 	std::vector <int> data;
 
 	DigitalIoPin co2_valve(0, 27, DigitalIoPin::output, false);
 
+=======
+>>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 	ModbusMaster hmp(241); // Create modbus object that connects to slave id 241 (HMP60)
 	hmp.begin(9600); // all nodes must operate at the same speed!
 	hmp.idle(idle_delay); // idle function is called while waiting for reply from slave
@@ -183,8 +187,11 @@ static void vMeasure(void *pvParameters) {
 	int co2Value = 0;
 	int rhValue = 0;
 	int tempValue = 0;
+<<<<<<< HEAD
 	int set_point = 750;
 	int offset = 20;
+=======
+>>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 
 	while (true)
 	{
@@ -192,15 +199,24 @@ static void vMeasure(void *pvParameters) {
 
 		if (hmpStatus.read())
 		{
+<<<<<<< HEAD
 			tempValue = temperatureData.read() / 10.0;
 			data.push_back(tempValue);
+=======
+			vTaskDelay(5);
+			tempValue = temperatureData.read() / 10;
+
+>>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 			vTaskDelay(5);
 			rhValue = humidityData.read() / 10.0;
 			data.push_back(rhValue);
 		}
+
+		vTaskDelay(5);
 		if (co2Status.read() == 0)
 		{
 			vTaskDelay(5);
+<<<<<<< HEAD
 			co2Value = co2Data.read() / 10.0;
 			if (co2Value + offset < set_point) {
 				data.push_back(co2Value);
@@ -215,6 +231,10 @@ static void vMeasure(void *pvParameters) {
 		DEBUGOUT("co2: %d\r\n", co2Value);
 		//DEBUGSTR(std::string("co2: %d\r\n", co2Value).c_str());
 		DEBUGSTR(std::string("Valve off\r\n").c_str());
+=======
+			co2Value = co2Data.read();
+		}
+>>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 	}
 }
 
@@ -239,7 +259,12 @@ static void vLcdUI(void *pvParameters)
 	LiquidCrystal lcd(&rs, &en, &d4, &d5, &d6, &d7);
 	lcd.begin(16, 2);
 
+<<<<<<< HEAD
 	Menu::Event event;
+=======
+	int val;
+
+>>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 	Menu menu(lcd);
 
 	NumericProperty <int> setPoint("setpoint", 0, 2000, false, 5);
@@ -249,10 +274,18 @@ static void vLcdUI(void *pvParameters)
 
 	while(true)
 	{
+<<<<<<< HEAD
 		if(xQueueReceive(menuEvents, &event, 5000) == pdTRUE)
 		{
 			menu.send(event);
 		}
+=======
+//		if(xQueueReceive(interrupt_q, &val, 5000) == pdTRUE)
+//		{
+//			Menu::Event event = static_cast <Menu::Event> (val);
+//			menu.send(event);
+//		}
+>>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 
 		//float rh;
 		//char buffer[32];
@@ -269,7 +302,7 @@ static void vLcdUI(void *pvParameters)
 }
 
 extern "C" {
-  void vStartSimpleMQTTDemo( void ); // ugly - should be in a header
+  void vStartMqttTask( void ); // ugly - should be in a header
 }
 
 int main(void) {
@@ -287,6 +320,7 @@ int main(void) {
 #endif
 
 	heap_monitor_setup();
+<<<<<<< HEAD
 	config.read();
 
 	if(!config.exists("ssid"))
@@ -300,6 +334,8 @@ int main(void) {
 
 	if(!config.exists("setpoint"))
 		config.set("setpoint", "0");
+=======
+>>>>>>> 0c8303b5109e303d24cb7a3e14a735c77db200b9
 
 	// initialize RIT (= enable clocking etc.)
 	//Chip_RIT_Init(LPC_RITIMER);
@@ -317,10 +353,10 @@ int main(void) {
 			(TaskHandle_t*) NULL);
 
 	xTaskCreate(vLcdUI, "vLcdUI",
-	configMINIMAL_STACK_SIZE * 4, NULL, (tskIDLE_PRIORITY + 1UL),
+	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
 
-	//vStartSimpleMQTTDemo();
+	vStartMqttTask();
 	/* Start the scheduler */
 	vTaskStartScheduler();
 

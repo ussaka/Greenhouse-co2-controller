@@ -29,9 +29,7 @@
 #define LOGGING_STACK_H_
 
 /* Include header for logging level macros. */
-#include "logging_levels.h"
-
-/* Standard Include. */
+#include <mqtt/logging_levels.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>

@@ -39,7 +39,7 @@
  * 3. Include the header file "logging_stack.h", if logging is enabled for DEMO.
  */
 
-#include "logging_levels.h"
+#include <mqtt/logging_levels.h>
 
 /* Logging configuration for the Demo. */
 #ifndef LIBRARY_LOG_NAME
@@ -63,7 +63,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
     //#define SdkLog( message )    vLoggingPrintf message
 #endif
 
-#include "logging_stack.h"
+#include <mqtt/logging_stack.h>
 
 /************ End of logging configuration ****************/
 
@@ -79,7 +79,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
  *
  * #define democonfigCLIENT_IDENTIFIER				"insert here."
  */
-#define democonfigCLIENT_IDENTIFIER				"ESP-MQTT-01"
+#define democonfigCLIENT_IDENTIFIER				"ESP-MQTT-GROUP-01" // DCAmDzgFFhoKKy8kCBw3NQA
 
 /**
  * @brief MQTT broker end point to connect to.
@@ -89,7 +89,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
  *
  * #define democonfigMQTT_BROKER_ENDPOINT				"insert here."
  */
-#define democonfigMQTT_BROKER_ENDPOINT				"192.168.1.254"
+#define democonfigMQTT_BROKER_ENDPOINT				"192.168.43.111" // mqtt3.thingspeak.com
 
 /**
  * @brief The port to use for the demo.
@@ -104,12 +104,17 @@ extern void vLoggingPrintf( const char * pcFormatString,
  * In the Windows port, this stack only holds a structure. The actual
  * stack is created by an operating system thread.
  */
-#define democonfigDEMO_STACKSIZE    (configMINIMAL_STACK_SIZE + 256)
+#define democonfigDEMO_STACKSIZE    (configMINIMAL_STACK_SIZE + 1024)
 
 
 #if 1
-#define WIFI_SSID	    "SmartIotMQTT"
-#define WIFI_PASS       "SmartIot"
+#define WIFI_SSID	    "Miko"
+#define WIFI_PASS       "kissa123"
+
+// MQTT
+#define USER_NAME		"test"						// DCAmDzgFFhoKKy8kCBw3NQA
+#define PASSWORD		"test"						// qKxqzEzD+xMf2LMg0SU24WYk
+#define TOPIC			"controller/test" 			// channels/1955513/publish
 #endif
 
 #endif /* DEMO_CONFIG_H */
