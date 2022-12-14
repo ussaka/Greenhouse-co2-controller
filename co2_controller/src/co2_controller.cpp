@@ -21,6 +21,7 @@
 // TODO: insert other include files here
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 #include "semphr.h"
 #include "heap_lock_monitor.h"
 #include "retarget_uart.h"
@@ -34,7 +35,18 @@
 #include "menu/NumericProperty.h"
 #include "Disablers.h"
 
-// TODO: insert other definitions and declarations here
+#include "DigitalIoPin.h"
+
+#define SIGA 0, 5
+#define SIGB 0, 6
+
+#define BUTTON_SELECT 1, 8
+
+//	EEPROM config
+static Config config;
+
+//	Menu event queue to which interrupts push events
+QueueHandle_t menuEvents = xQueueCreate(10, sizeof(Menu::Event));
 
 /* The following is required if runtime statistics are to be collected
  * Copy the code to the source file where other you initialize hardware */
@@ -46,28 +58,63 @@ void vConfigureTimerForRunTimeStats( void ) {
 	LPC_SCTSMALL1->CTRL_U = SCT_CTRL_PRE_L(255) | SCT_CTRL_CLRCTR_L; // set prescaler to 256 (255 + 1), and start timer
 }
 
+//	Interrupt handler for the rotary encoder
+void PIN_INT0_IRQHandler(void)
+{
+	portBASE_TYPE higherPriorityWoken = pdFALSE;
+
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(0));
+	NVIC_ClearPendingIRQ(PIN_INT0_IRQn);
+
+	static TickType_t lastTicks = 0;
+	TickType_t currentTicks = xTaskGetTickCountFromISR();
+
+	/*	Only send the direction of the rotary encoder when atleast 40 ticks have
+	 *	passed. This is because the rotary encoder might trigger multiple interrupts
+	 *	when turned only once. One downside of this is that when the rotary encoder
+	 *	is being turned fast enough, we will ignore interrupts that happen too quickly */
+	if(currentTicks - lastTicks > 40)
+	{
+		//	Determine which way the rotary encode is being turned
+		Menu::Event dir = Chip_GPIO_GetPinState(LPC_GPIO, SIGA) ? Menu::Event::Up : Menu::Event::Down;
+		xQueueSendFromISR(menuEvents, (void*)&dir, &higherPriorityWoken);
+	}
+
+	lastTicks = currentTicks;
+	portEND_SWITCHING_ISR(higherPriorityWoken);
 }
-/* end runtime statictics collection */
+
+//	Interrupt handler for the confirm button
+void PIN_INT1_IRQHandler(void)
+{
+	portBASE_TYPE higherPriorityWoken = pdFALSE;
+
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(1));
+	NVIC_ClearPendingIRQ(PIN_INT1_IRQn);
+
+	Menu::Event event = Menu::Event::Confirm;
+	xQueueSendFromISR(menuEvents, (void*)&event, &higherPriorityWoken);
+
+	portEND_SWITCHING_ISR(higherPriorityWoken);
+}
+
+}
 
 static void setupGPIOInterrupts(void) {
 	/* Initialise PININT driver */
 	Chip_PININT_Init(LPC_GPIO_PIN_INT);
 
-	#define SIGA 0, 5
-	#define SIGB 0, 6
-
-	#define BUTTON_SELECT
-
-	/* Set pins back to GPIO and configure as inputs*/
-	// SIGA
-	Chip_IOCON_PinMuxSet(LPC_IOCON, SIGA,
-			(IOCON_DIGMODE_EN | IOCON_MODE_PULLUP));
+	//	Configure SIG A of rotary encoder as an input
+	Chip_IOCON_PinMuxSet(LPC_IOCON, SIGA, (IOCON_DIGMODE_EN | IOCON_MODE_PULLUP));
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO, SIGA);
 
-	// SIGB
-	Chip_IOCON_PinMuxSet(LPC_IOCON, SIGB,
-			(IOCON_DIGMODE_EN | IOCON_MODE_PULLUP));
+	//	Configure SIG B of rotary encoder as an input
+	Chip_IOCON_PinMuxSet(LPC_IOCON, SIGB, (IOCON_DIGMODE_EN | IOCON_MODE_PULLUP));
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO, SIGB);
+
+	//	Configure the confirm button as an input
+	Chip_IOCON_PinMuxSet(LPC_IOCON, BUTTON_SELECT, (IOCON_DIGMODE_EN | IOCON_MODE_PULLUP) | IOCON_INV_EN);
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO, BUTTON_SELECT);
 
 	/* Enable PININT clock */
 	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_PININT);
@@ -77,17 +124,27 @@ static void setupGPIOInterrupts(void) {
 
 	/* Configure interrupt channels for the GPIO pins in INMUX block */
 	Chip_INMUX_PinIntSel(0, SIGA); // SIGA
+	Chip_INMUX_PinIntSel(1, BUTTON_SELECT); // SIGA
 
 	/* Configure channel interrupts as edge sensitive and falling edge interrupt */
 	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(0));
 	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(0));
 	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(0));
 
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(1));
+	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(1));
+	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(1));
+
 	/* Enable interrupts in the NVIC */
 	NVIC_ClearPendingIRQ(PIN_INT0_IRQn);
 	NVIC_SetPriority(PIN_INT0_IRQn,
 	configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
 	NVIC_EnableIRQ(PIN_INT0_IRQn);
+
+	NVIC_ClearPendingIRQ(PIN_INT1_IRQn);
+	NVIC_SetPriority(PIN_INT1_IRQn,
+	configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+	NVIC_EnableIRQ(PIN_INT1_IRQn);
 }
 
 static void idle_delay()
@@ -104,6 +161,8 @@ static void vSendMQTT(void *pvParameters) {
 
 
 static void vMeasure(void *pvParameters) {
+	DigitalIoPin co2_valve(0, 27, DigitalIoPin::output, false);
+
 	ModbusMaster hmp(241); // Create modbus object that connects to slave id 241 (HMP60)
 	hmp.begin(9600); // all nodes must operate at the same speed!
 	hmp.idle(idle_delay); // idle function is called while waiting for reply from slave
@@ -120,6 +179,7 @@ static void vMeasure(void *pvParameters) {
 	int co2Value = 0;
 	int rhValue = 0;
 	int tempValue = 0;
+	int set_point = 750;
 
 	while (true)
 	{
@@ -127,19 +187,23 @@ static void vMeasure(void *pvParameters) {
 
 		if (hmpStatus.read())
 		{
-			vTaskDelay(5);
 			tempValue = temperatureData.read() / 10;
-
 			vTaskDelay(5);
 			rhValue = humidityData.read() / 10;
 		}
-
-		vTaskDelay(5);
 		if (co2Status.read() == 0)
 		{
 			vTaskDelay(5);
 			co2Value = co2Data.read();
+			if (co2Value + 20 < set_point) {
+				co2_valve.write(true);
+				DEBUGSTR(std::string("co2: %d\r\n", co2Value).c_str());
+				DEBUGSTR(std::string("Valve on\r\n").c_str());
+			}
 		}
+		vTaskDelay(2000);
+		co2_valve.write(false);
+		DEBUGSTR(std::string("Valve off\r\n").c_str());
 	}
 }
 
@@ -164,17 +228,14 @@ static void vLcdUI(void *pvParameters)
 	LiquidCrystal lcd(&rs, &en, &d4, &d5, &d6, &d7);
 	lcd.begin(16, 2);
 
-	int val;
+	Menu::Event event;
 
 	Menu menu(lcd);
 
 	while(true)
 	{
-//		if(xQueueReceive(interrupt_q, &val, 5000) == pdTRUE)
-//		{
-//			Menu::Event event = static_cast <Menu::Event> (val);
-//			menu.send(event);
-//		}
+		if(xQueueReceive(menuEvents, &event, 5000) == pdTRUE)
+			menu.send(event);
 
 		//float rh;
 		//char buffer[32];
@@ -209,6 +270,25 @@ int main(void) {
 #endif
 
 	heap_monitor_setup();
+	DEBUGSTR("Reading config\r\n");
+	config.read();
+/*
+	if(!config.exists("ssid"))
+		config.set("ssid", "none");
+
+	if(!config.exists("ssidpass"))
+		config.set("ssidpass", "none");
+
+	if(!config.exists("brokerip"))
+		config.set("brokerip", "none");
+
+	if(!config.exists("setpoint"))
+		config.set("setpoint", "0");
+*/
+	DEBUGSTR(std::string("ssid is " + config.get("ssid") + "\r\n").c_str());
+	DEBUGSTR(std::string("ssidpass is " + config.get("ssidpass") + "\r\n").c_str());
+	DEBUGSTR(std::string("brokerip is " + config.get("brokerip") + "\r\n").c_str());
+	DEBUGSTR(std::string("setpoint is " + config.get("setpoint") + "\r\n").c_str());
 
 	// initialize RIT (= enable clocking etc.)
 	//Chip_RIT_Init(LPC_RITIMER);
@@ -226,10 +306,10 @@ int main(void) {
 			(TaskHandle_t*) NULL);
 
 	xTaskCreate(vLcdUI, "vLcdUI",
-	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+	configMINIMAL_STACK_SIZE * 4, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
 
-	vStartSimpleMQTTDemo();
+	//vStartSimpleMQTTDemo();
 	/* Start the scheduler */
 	vTaskStartScheduler();
 

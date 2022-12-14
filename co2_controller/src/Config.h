@@ -7,7 +7,7 @@
 class Config
 {
 public:
-    Config();
+    void read();
 
     bool exists(const std::string& key);
     const std::string& get(const std::string& key);
@@ -17,7 +17,7 @@ private:
     std::unordered_map <std::string, std::string> data;
     
     //  Manual says that top 64 bytes of the EEPROM are reserved and may not be used
-    const static unsigned offset = 65;
+    const static unsigned offset = 0x00000100;
 
     //  How many bytes of the EEPROM are we going to use
     const static unsigned range = 256;  
