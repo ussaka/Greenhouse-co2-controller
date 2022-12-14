@@ -64,7 +64,7 @@
 
 /* Transport interface include. */
 
-
+#include "connection_info.h"
 
 /*-----------------------------------------------------------*/
 
@@ -204,7 +204,7 @@ struct NetworkContext
  * @param[in] pvParameters Parameters as passed at the time of task creation. Not
  * used in this example.
  */
-static void vMqttTask( void * pvParameters );
+void vMqttTask( void * pvParameters );
 
 
 /**
@@ -218,7 +218,7 @@ static void vMqttTask( void * pvParameters );
  *
  * @return The status of the final connection attempt.
  */
-static PlaintextTransportStatus_t prvConnectToServerWithBackoffRetries( NetworkContext_t * pxNetworkContext );
+static PlaintextTransportStatus_t prvConnectToServerWithBackoffRetries( NetworkContext_t * pxNetworkContext, connection_info* info );
 
 /**
  * @brief Sends an MQTT Connect packet over the already connected TCP socket.
@@ -362,30 +362,12 @@ static MQTTFixedBuffer_t xBuffer =
  * @brief Create the task that demonstrates the MQTT API over a plaintext TCP
  * connection.
  */
-void vStartMqttTask( void )
-{
-    /* This example uses a single application task, which in turn is used to
-     * connect, subscribe, publish, unsubscribe and disconnect from the MQTT
-     * broker.
-     *
-     * Also see https://www.freertos.org/mqtt/mqtt-agent-demo.html? for an
-     * alternative run time model whereby coreMQTT runs in an autonomous
-     * background agent task.  Executing the MQTT protocol in an agent task
-     * removes the need for the application writer to explicitly manage any MQTT
-     * state or call the MQTT_ProcessLoop() API function. Using an agent task
-     * also enables multiple application tasks to more easily share a single
-     * MQTT connection.*/
-    xTaskCreate( vMqttTask,          /* Function that implements the task. */
-                 "vMqttTask",               /* Text name for the task - only used for debugging. */
-                 democonfigDEMO_STACKSIZE, /* Size of stack (in words, not bytes) to allocate for the task. */
-                 NULL,                     /* Task parameter - not used in this case. */
-				 (tskIDLE_PRIORITY + 1UL),         /* Task priority, must be between 0 and configMAX_PRIORITIES - 1. */
-                 NULL );                   /* Used to pass out a handle to the created task - not used in this case. */
-}
+
 /*-----------------------------------------------------------*/
 
-static void vMqttTask( void * pvParameters )
+void vMqttTask( void * pvParameters )
 {
+	connection_info* info = (connection_info*) pvParameters;
     uint32_t ulPublishCount = 0U, ulTopicCount = 0U;
     const uint32_t ulMaxPublishCount = 5UL;
     NetworkContext_t xNetworkContext = { 0 };
@@ -404,7 +386,7 @@ static void vMqttTask( void * pvParameters )
 
     for( ; ; )
     {
-        xNetworkStatus = prvConnectToServerWithBackoffRetries( &xNetworkContext );
+        xNetworkStatus = prvConnectToServerWithBackoffRetries( &xNetworkContext, info );
         prvCreateMQTTConnectionWithBroker( &xMQTTContext, &xNetworkContext );
 
         int co2 = 1;
@@ -421,12 +403,12 @@ static void vMqttTask( void * pvParameters )
         xMQTTStatus = MQTT_Disconnect( &xMQTTContext );
 		xNetworkStatus = Plaintext_FreeRTOS_Disconnect( &xNetworkContext );
 
-		vTaskDelay(configTICK_RATE_HZ * 5);
+		vTaskDelay(configTICK_RATE_HZ * 60 * 5);
     }
 }
 /*-----------------------------------------------------------*/
 
-static PlaintextTransportStatus_t prvConnectToServerWithBackoffRetries( NetworkContext_t * pxNetworkContext )
+static PlaintextTransportStatus_t prvConnectToServerWithBackoffRetries( NetworkContext_t * pxNetworkContext, connection_info* info )
 {
     PlaintextTransportStatus_t xNetworkStatus;
     BackoffAlgorithmStatus_t xBackoffAlgStatus = BackoffAlgorithmSuccess;
@@ -449,11 +431,13 @@ static PlaintextTransportStatus_t prvConnectToServerWithBackoffRetries( NetworkC
          * the MQTT broker as specified in democonfigMQTT_BROKER_ENDPOINT and
          * democonfigMQTT_BROKER_PORT at the top of this file. */
         LogInfo( ( "Create a TCP connection to %s:%d.",
-                   democonfigMQTT_BROKER_ENDPOINT,
-                   democonfigMQTT_BROKER_PORT ) );
+                   info->brokerip,
+                   info->brokerport ) );
         xNetworkStatus = Plaintext_FreeRTOS_Connect( pxNetworkContext,
-                                                     democonfigMQTT_BROKER_ENDPOINT,
-                                                     democonfigMQTT_BROKER_PORT,
+                                                     info->brokerip,
+                                                     info->brokerport,
+													 info->ssid,
+													 info->ssidpass,
                                                      mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS,
                                                      mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS );
 

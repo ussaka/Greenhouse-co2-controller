@@ -77,6 +77,8 @@ struct NetworkContext
 PlaintextTransportStatus_t Plaintext_FreeRTOS_Connect( NetworkContext_t * pNetworkContext,
                                                        const char * pHostName,
                                                        uint16_t port,
+													   const char* ssid,
+													   const char* ssidpass,
                                                        uint32_t receiveTimeoutMs,
                                                        uint32_t sendTimeoutMs )
 {
@@ -103,7 +105,7 @@ PlaintextTransportStatus_t Plaintext_FreeRTOS_Connect( NetworkContext_t * pNetwo
                                         receiveTimeoutMs,
                                         sendTimeoutMs );
 #else
-        pPlaintextTransportParams->tcpSocket = esp_socket(WIFI_SSID, WIFI_PASS) ;
+        pPlaintextTransportParams->tcpSocket = esp_socket(ssid, ssidpass) ;
         socketStatus = esp_connect(pPlaintextTransportParams->tcpSocket, pHostName, port);
 #endif
 
