@@ -81,8 +81,9 @@ void PIN_INT0_IRQHandler(void) {
 	 *	is being turned fast enough, we will ignore interrupts that happen too quickly */
 	if (currentTicks - lastTicks > 70) {
 		//	Determine which way the rotary encode is being turned
-		Menu::Event dir = Menu::Event::Up;
-
+		Menu::Event dir =
+				Chip_GPIO_GetPinState(LPC_GPIO, SIGA) ?
+						Menu::Event::Up : Menu::Event::Down;
 		xQueueSendFromISR(menuEvents, (void* )&dir, &higherPriorityWoken);
 	}
 
