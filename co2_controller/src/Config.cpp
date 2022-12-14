@@ -2,10 +2,14 @@
 #include "Disablers.h"
 
 #include "eeprom.h"
+#include "board.h"
 #include "FreeRTOS.h"
 
-Config::Config()
+void Config::read()
 {
+    Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_EEPROM);
+    Chip_SYSCTL_PeriphReset(RESET_EEPROM);
+
     //  Let's read the EEPROM first so it can be cached
     uint8_t buffer[range] { 0 };
     uint8_t res = Chip_EEPROM_Read(offset, buffer, range);
@@ -32,6 +36,9 @@ Config::Config()
                  *  point which means that std::string knows where a key or a value ends */
 				std::string key((char*)keyStart);
 				data[key] = std::string((char*)valueStart);
+
+                DEBUGSTR(std::string("Key is '" + key + "'\r\n").c_str());
+                DEBUGSTR(std::string("Value is '" + data[key] + "'\r\n").c_str());
 
                 //  The previous value start is irrelevant now
 				valueStart = nullptr;
@@ -104,4 +111,6 @@ void Config::set(const std::string& key, const std::string& value)
     //  Disable the scheduler and write the buffer to the EEPROM
     DisableScheduler d;
     uint8_t res = Chip_EEPROM_Write(offset, buffer, range);
+
+    DEBUGSTR(std::string("eeprom_write returned " + std::to_string(res) + "\r\n").c_str());
 }
