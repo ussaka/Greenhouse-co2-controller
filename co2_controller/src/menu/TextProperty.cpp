@@ -46,7 +46,7 @@ void TextProperty::input(bool up)
             selected = asciiLength - 1;
     }
 
-    value.back() = ascii[selected];
+    value[currentlyEditing] = ascii[selected];
 }
 
 bool TextProperty::exitOnConfirm()
@@ -64,7 +64,10 @@ bool TextProperty::exitOnConfirm()
 
     //  If we're not exiting, move on to the next character
     currentlyEditing++;
-    value += ".";
+
+    //	Do we have enough characters?
+    if(currentlyEditing >= value.size())
+		value += ".";
 
     return false;
 }
