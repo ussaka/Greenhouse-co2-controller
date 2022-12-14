@@ -54,6 +54,7 @@
 
 /* Kernel includes. */
 #include "FreeRTOS.h"
+#include "queue.h"
 #include "task.h"
 
 /* Demo Specific configs. */
@@ -365,6 +366,8 @@ static MQTTFixedBuffer_t xBuffer =
 
 /*-----------------------------------------------------------*/
 
+extern QueueHandle_t sensorData;
+
 void vMqttTask( void * pvParameters )
 {
 	connection_info* info = (connection_info*) pvParameters;
@@ -389,16 +392,19 @@ void vMqttTask( void * pvParameters )
         xNetworkStatus = prvConnectToServerWithBackoffRetries( &xNetworkContext, info );
         prvCreateMQTTConnectionWithBroker( &xMQTTContext, &xNetworkContext );
 
-        int co2 = 1;
-        int rh = 2;
-        int temp = 3;
-        int valve = 4;
-        int setPoint = 5;
+        int data[5];
+		if(xQueueReceive(sensorData, &data, 5000) == pdTRUE) {
+			int temp = data[0];
+			int rh = data[1];
+			int co2 = data[2];
+			int valve = data[3];
+			int setPoint = data[5];
 
-        char msg[256];
-        sprintf(msg, "field1=%d&field2=%d&field3=%d&field4=%dfield5=%d", co2, rh, temp, valve, setPoint);
+			char msg[256];
+			sprintf(msg, "field1=%d&field2=%d&field3=%d&field4=%dfield5=%d", co2, rh, temp, valve, setPoint);
 
-        prvMQTTPublishToTopic( &xMQTTContext , msg );
+			prvMQTTPublishToTopic( &xMQTTContext , msg );
+		}
 
         xMQTTStatus = MQTT_Disconnect( &xMQTTContext );
 		xNetworkStatus = Plaintext_FreeRTOS_Disconnect( &xNetworkContext );
