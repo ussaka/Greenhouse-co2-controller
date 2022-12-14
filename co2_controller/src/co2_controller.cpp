@@ -203,6 +203,7 @@ static void vMeasure(void *pvParameters) {
 		vTaskDelay(5);
 
 		if (hmpStatus.read()) {
+			vTaskDelay(5);
 			tempValue = temperatureData.read() / 10.0;
 			temp.setValue(tempValue);
 			vTaskDelay(5);
@@ -234,7 +235,7 @@ static void vMeasure(void *pvParameters) {
 		valve.setValue(co2_valve.read());
 
 		sendSensorData();
-		vTaskDelay(configTICK_RATE_HZ * 5); //5s
+		vTaskDelay(configTICK_RATE_HZ * 2); //30s
 	}
 
 }
@@ -262,7 +263,7 @@ static void vLcdUI(void *pvParameters) {
 	TextProperty ip("MQTT IP", config.get("brokerip"));
 	//TextProperty topic("MQTT topic", "a");
 
-	menu.addProperty(setPoint);
+	setPoint.addToMenu(menu);
 	co2.addToMenu(menu);
 	hum.addToMenu(menu);
 	temp.addToMenu(menu);
@@ -274,7 +275,7 @@ static void vLcdUI(void *pvParameters) {
 	//menu.addProperty(topic);
 
 	menu.display();
-	setPoint.setValue(700);
+	setPoint.setValue(atoi(config.get("setpoint").c_str()));
 
 	while (true) {
 		if (xQueueReceive(menuEvents, &event, 5000) == pdTRUE) {
@@ -293,6 +294,9 @@ static void vLcdUI(void *pvParameters) {
 
 				else if(selected == &ip)
 					config.set("brokerip", selected->getValue());
+
+				else if(selected == &setPoint)
+					config.set("setpoint", selected->getValue());
 
 				else
 				{
@@ -351,6 +355,7 @@ int main(void) {
 	if(!config.exists("ssidpass")) config.set("ssidpass", "SmartIot");
 	if(!config.exists("brokerip")) config.set("brokerip", "mqtt3.thingspeak.com");
 	if(!config.exists("brokerport")) config.set("brokerport", "1883");
+	if(!config.exists("setpoint")) config.set("setpoint", "700");
 
 	//config.set("brokerip", "192.168.43.111");
 

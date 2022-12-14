@@ -13,7 +13,7 @@ struct DisableScheduler
 
     ~DisableScheduler()
     {
-        //vTaskResumeAll();
+        xTaskResumeAll();
     }
 };
 
