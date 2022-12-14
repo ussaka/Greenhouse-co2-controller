@@ -80,9 +80,33 @@ void PIN_INT0_IRQHandler(void) {
 	 *	is being turned fast enough, we will ignore interrupts that happen too quickly */
 	if (currentTicks - lastTicks > 70) {
 		//	Determine which way the rotary encode is being turned
-		Menu::Event dir =
-				Chip_GPIO_GetPinState(LPC_GPIO, SIGA) ?
-						Menu::Event::Up : Menu::Event::Down;
+		Menu::Event dir = Menu::Event::Up;
+
+		xQueueSendFromISR(menuEvents, (void* )&dir, &higherPriorityWoken);
+	}
+
+	lastTicks = currentTicks;
+	portEND_SWITCHING_ISR(higherPriorityWoken);
+}
+
+//	Interrupt handler for the rotary encoder
+void PIN_INT2_IRQHandler(void) {
+	portBASE_TYPE higherPriorityWoken = pdFALSE;
+
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(2));
+	NVIC_ClearPendingIRQ(PIN_INT2_IRQn);
+
+	static TickType_t lastTicks = 0;
+	TickType_t currentTicks = xTaskGetTickCountFromISR();
+
+	/*	Only send the direction of the rotary encoder when atleast 40 ticks have
+	 *	passed since the last interrupt. This is because the rotary encoder might trigger multiple interrupts
+	 *	when turned only once. One downside of this is that when the rotary encoder
+	 *	is being turned fast enough, we will ignore interrupts that happen too quickly */
+	if (currentTicks - lastTicks > 70) {
+		//	Determine which way the rotary encode is being turned
+		Menu::Event dir = Menu::Event::Down;
+
 		xQueueSendFromISR(menuEvents, (void* )&dir, &higherPriorityWoken);
 	}
 
@@ -137,6 +161,7 @@ static void setupGPIOInterrupts(void) {
 
 	/* Configure interrupt channels for the GPIO pins in INMUX block */
 	Chip_INMUX_PinIntSel(0, SIGA); // SIGA
+	Chip_INMUX_PinIntSel(2, SIGB); // SIGA
 	Chip_INMUX_PinIntSel(1, BUTTON_SELECT);
 
 	/* Configure channel interrupts as edge sensitive and falling edge interrupt */
@@ -148,6 +173,10 @@ static void setupGPIOInterrupts(void) {
 	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(1));
 	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(1));
 
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(2));
+	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(2));
+	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(2));
+
 	/* Enable interrupts in the NVIC */
 	NVIC_ClearPendingIRQ(PIN_INT0_IRQn);
 	NVIC_SetPriority(PIN_INT0_IRQn,
@@ -158,6 +187,11 @@ static void setupGPIOInterrupts(void) {
 	NVIC_SetPriority(PIN_INT1_IRQn,
 	configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
 	NVIC_EnableIRQ(PIN_INT1_IRQn);
+
+	NVIC_ClearPendingIRQ(PIN_INT2_IRQn);
+	NVIC_SetPriority(PIN_INT2_IRQn,
+	configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+	NVIC_EnableIRQ(PIN_INT2_IRQn);
 }
 
 static void idle_delay() {
@@ -222,6 +256,10 @@ static void vMeasure(void *pvParameters) {
 		//data.push_back(co2_valve.read());
 		//xQueueSend(data_q, &data, 100);
 		//DEBUGSTR(std::string("co2: %d\r\n", co2Value).c_str());
+
+		co2Value = 0;
+		rhValue = 0;
+		tempValue = 0;
 	}
 
 }
@@ -244,7 +282,7 @@ static void vLcdUI(void *pvParameters) {
 
 	Menu menu(lcd);
 
-	NumericProperty<int> setPoint("Co2 set", 0, 2000, false, 5);
+	NumericProperty<int> setPoint("Co2 set", 600, 2000, false, 5);
 	NumericProperty<int> co2Value("Co2 value", 0, 2000, false, 5);
 	NumericProperty<int> hum("Humidity", 0, 2000, false, 5);
 	NumericProperty<int> temp("Temperature", 0, 2000, false, 5);
