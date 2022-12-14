@@ -78,7 +78,7 @@ void PIN_INT0_IRQHandler(void) {
 	 *	passed since the last interrupt. This is because the rotary encoder might trigger multiple interrupts
 	 *	when turned only once. One downside of this is that when the rotary encoder
 	 *	is being turned fast enough, we will ignore interrupts that happen too quickly */
-	if (currentTicks - lastTicks > 2) {
+	if (currentTicks - lastTicks > 70) {
 		//	Determine which way the rotary encode is being turned
 		Menu::Event dir =
 				Chip_GPIO_GetPinState(LPC_GPIO, SIGA) ?
@@ -92,14 +92,17 @@ void PIN_INT0_IRQHandler(void) {
 
 //	Interrupt handler for the confirm button
 void PIN_INT1_IRQHandler(void) {
-	portBASE_TYPE higherPriorityWoken = pdFALSE;
-
 	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(1));
 	NVIC_ClearPendingIRQ(PIN_INT1_IRQn);
+	portBASE_TYPE higherPriorityWoken = pdFALSE;
 
-	Menu::Event event = Menu::Event::Confirm;
-	xQueueSendFromISR(menuEvents, (void* )&event, &higherPriorityWoken);
-
+	static TickType_t lastTicks = 0;
+	TickType_t currentTicks = xTaskGetTickCountFromISR();
+	if (currentTicks - lastTicks > 200) {
+		Menu::Event event = Menu::Event::Confirm;
+		xQueueSendFromISR(menuEvents, (void* )&event, &higherPriorityWoken);
+	}
+	lastTicks = currentTicks;
 	portEND_SWITCHING_ISR(higherPriorityWoken);
 }
 
@@ -273,16 +276,17 @@ static void vLcdUI(void *pvParameters) {
 		if (xQueueReceive(menuEvents, &event, 5000) == pdTRUE) {
 			menu.send(event);
 			/*
-			config.set("ssid", ssid.getValue());
-			config.set("ssidpass", pass.getValue());
-			config.set("brokerip", ip.getValue());
-			config.set("setpoint", topic.getValue());
-			*/
+			 config.set("ssid", ssid.getValue());
+			 config.set("ssidpass", pass.getValue());
+			 config.set("brokerip", ip.getValue());
+			 config.set("setpoint", topic.getValue());
+			 */
 		}
-
-		if (xQueueReceive(data_q, &data, 100)) {
-			co2Value.setValue(data[0]);
-		}
+		/*
+		 if (xQueueReceive(data_q, &data, 100)) {
+		 co2Value.setValue(data[0]);
+		 }
+		 */
 	}
 }
 
