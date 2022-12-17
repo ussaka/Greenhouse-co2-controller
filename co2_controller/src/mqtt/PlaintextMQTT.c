@@ -410,8 +410,8 @@ void vMqttTask( void * pvParameters )
         xMQTTStatus = MQTT_Disconnect( &xMQTTContext );
 		xNetworkStatus = Plaintext_FreeRTOS_Disconnect( &xNetworkContext );
 
-		//vTaskDelay(configTICK_RATE_HZ * 60 * 5);
-		vTaskDelay(configTICK_RATE_HZ * 5);
+		vTaskDelay(configTICK_RATE_HZ * 60 * 5); // 5 min
+		//vTaskDelay(configTICK_RATE_HZ * 5);
     }
 }
 /*-----------------------------------------------------------*/
